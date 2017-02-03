@@ -5,13 +5,14 @@ project(image_stamper)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  cv_bridge
-  image_transport
   roscpp
   rospy
   sensor_msgs
-  std_msgs
+  uav_msgs
 )
+
+#catkin_package(CATKIN_DEPENDS message_runtime)
+#add_message_files(FILES uav_msgs.msg)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -105,7 +106,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES cvb_tut
-#  CATKIN_DEPENDS cv_bridge image_transport roscpp rospy sensor_msgs std_msgs
+  CATKIN_DEPENDS roscpp rospy sensor_msgs uav_msgs
 #  DEPENDS system_lib
 )
 
@@ -131,16 +132,16 @@ include_directories(
 # add_dependencies(cvb_tut ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(image_stamper_node src/image_converter.cpp)
+#add_executable(image_stamper_node src/image_converter.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(cvb_tut_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(image_stamper_node
-  ${catkin_LIBRARIES}
-)
+#target_link_libraries(image_stamper_node
+#  ${catkin_LIBRARIES}
+#)
 
 #############
 ## Install ##
