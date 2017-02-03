@@ -1,11 +1,8 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
 
-## Simple publisher demo that published std_msgs/Strings messages
-## to the 'pixel_data' topic
+## Simple publisher that publishes pixel coordinates on mouse click
+## Publishes to the 'pixel_data' topic
 ## Jesse Wynn AUVSI '17
-
-##_TO_DO
-##_
 
 import rospy
 import cv2
