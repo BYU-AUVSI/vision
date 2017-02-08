@@ -69,9 +69,11 @@ def getNED(states_image,R_b_i):
     cv2.setMouseCallback("Campus",returnXY)
     while True:
         cv2.imshow("Campus",image)
+        #I don't know why this waitKey is necessary but the loop doesn't work without it,
+        #even though you do nothing with the key
         key = cv2.waitKey(1) & 0xFF
 
-        if key == ord("z"):
+        if point != []:
             break
 
     print("Point: " + str(point))
@@ -81,11 +83,6 @@ def getNED(states_image,R_b_i):
 
     height = np.size(image, 0)
     width = np.size(image, 1)
-
-    print(str(height) + 'x' + str(width))
-
-    # print('Width: ' + str(width))
-    # print('Height: ' + str(height))
 
     #distances in pixels from origin of camera frame. origin is center of image.
     #don't forget that y is down in camera frame
@@ -101,7 +98,14 @@ def getNED(states_image,R_b_i):
 
     den = np.dot(k_i.T,big_term)
 
-    p_obj = states_image[0:3] + h*big_term/den
+    #variables for transform from gimbal center to MAV center
+    #these should be class members when this becomes a class
+    gimbal_north = 0.5
+    gimbal_east = 0
+    gimbal_down = 0
+    MAV_to_gimbal = np.array([[gimbal_north,gimbal_east,gimbal_down]]).T
+
+    p_obj = states_image[0:3] + MAV_to_gimbal + h*big_term/den
 
     #since we are using the flat earth model and to avoid the system freaking out
     #with division, set p_obj[2]=0
