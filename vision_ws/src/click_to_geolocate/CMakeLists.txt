@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  cv_bridge
 )
 
 ## System dependencies are found with CMake's conventions
@@ -102,7 +103,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS #include
   LIBRARIES click_to_geolocate
-  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime cv_bridge
   DEPENDS system_lib
 )
 

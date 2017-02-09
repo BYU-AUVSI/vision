@@ -11,15 +11,20 @@ import rospy
 import cv2
 import numpy as np
 import sys
+from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import String
 from click_to_geolocate.msg import IntList
+from sensor_msgs.msg import Image
 
+'''
+class to perform calculations on camera image
+'''
 class camClick:
 
     '''
     initializes camera parameter
     Imputs:
-        gimbal_pos:     3x1 numpy array, [north,east,down].T, position of gimbal
+        gimbal_pos:     3x1 list, [north,east,down].T, position of gimbal
                         center relative to MAV body center
         v:              float, field of view of camera in degrees
     '''
@@ -38,7 +43,7 @@ class camClick:
     '''
     called by getNED function
     Inputs:
-        gimbal_angles:  2x1 numpy array, [alpha_az,alpha_el].T, gimbal position
+        gimbal_angles:  2x1 list, [alpha_az,alpha_el].T, gimbal position
                         angles
                         alpha_az is a right-handed roation about k^b
                         negative alpha_el points towards ground
@@ -118,27 +123,46 @@ class camClick:
 
         return p_obj
 
-#define mouse callback function to capture and publish pixel data
-def click_and_pub_pixel_data(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        refPt = IntList()
-        refPt.data = [x,y]
-        #rospy.loginfo(refPt)
-        return refPt
-
+'''
+ROS class for managing data
+'''
 class listen_and_locate:
 
     def __init__(self):
-        self.image_sub = rospy.Subscriber('/usb_cam/image_raw',Image,image_cb)
+        self.image_sub = rospy.Subscriber('/usb_cam/image_raw',Image,self.image_cb)
         self.pub = rospy.Publisher('pixel_data', IntList, queue_size=10)
+        self.bridge = CvBridge()
 
-        #setup an OpenCV window and set mouse Callback
+        #parameters for camera (eventually will be obtained on initialization)
+        gimbal_pos = [0.5,0,0.1]
+        v = 45.0
+        # self.camera = camClick(gimbal_pos,v)
+
+        self.refPt = IntList()
+
+    def image_cb(self, data):
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            # print(cv_image.shape)
+        except CvBridgeError as e:
+            print(e)
+
+        #creates a named window for our camera, waits for mouse click
         cv2.namedWindow('spotter_cam')
-        cv2.setMouseCallback('spotter_cam', click_and_pub_pixel_data)
+        cv2.setMouseCallback('spotter_cam', self.click_and_pub_pixel_data)
+        cv2.imshow('spotter_cam',cv_image)
+        cv2.waitKey(1)
 
-        def image_cb(self, data):
+    '''
+    mouse click callback. uses self.camera to publish an NED coordinate
+    requires stampedImages to be subscribed to
+    '''
+    def click_and_pub_pixel_data(self, event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            self.refPt.data = [x,y]
 
-#define the main talker function
+            self.pub.publish(self.refPt)
+
 def main(args):
     rospy.init_node('locator', anonymous=True)
     listen = listen_and_locate()
@@ -146,13 +170,6 @@ def main(args):
         rospy.spin()
     except KeyBoardInterrupt:
         print("Shutting down")
-    rate = rospy.Rate(30) #approximate "frame rate"
-    while not rospy.is_shutdown():
-        ret, frame = cap.read()
-        cv2.imshow('spotter_cam', frame)
-        cv2.waitKey(1)
-        rate.sleep()
-    cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
