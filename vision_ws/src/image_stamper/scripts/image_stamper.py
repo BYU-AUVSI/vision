@@ -29,6 +29,8 @@ class imageStamper:
         p = 0
         q = 0
         r = 0
+        alpha_az = 0.0*np.pi/180.0
+        alpha_el = -45.0*np.pi/180.0
 
         self.SI.pn = pn
         self.SI.pe = pe
@@ -42,6 +44,8 @@ class imageStamper:
         self.SI.p = p
         self.SI.q = q
         self.SI.r = r
+        self.SI.alpha_az = alpha_az
+        self.SI.alpha_el = alpha_el
         self.SI.image = data
 
         self.iSPub.publish(self.SI)
