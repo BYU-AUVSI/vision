@@ -17,18 +17,18 @@ class imageStamper:
 
     def callback(self,data):
         #we actually won't use velocities and angles will be quaternions
-        pn = 1
-        pe = 2
-        pd = 3
-        u = 4
-        v = 5
-        w = 6
-        phi = 7
-        theta = 8
-        psi = 9
-        p = 10
-        q = 11
-        r = 12
+        pn = 100
+        pe = 0
+        pd = -100
+        u = 0
+        v = 0
+        w = 0
+        phi = 0.0*np.pi/180.0
+        theta = 0.0*np.pi/180.0
+        psi = 0.0*np.pi/180.0
+        p = 0
+        q = 0
+        r = 0
 
         self.SI.pn = pn
         self.SI.pe = pe
@@ -42,6 +42,7 @@ class imageStamper:
         self.SI.p = p
         self.SI.q = q
         self.SI.r = r
+        self.SI.image = data
 
         self.iSPub.publish(self.SI)
 

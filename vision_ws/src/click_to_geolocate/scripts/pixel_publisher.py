@@ -15,6 +15,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import String
 from click_to_geolocate.msg import IntList
 from sensor_msgs.msg import Image
+from uav_msgs.msg import stampedImage
 
 '''
 class to perform calculations on camera image
@@ -41,25 +42,33 @@ class camClick:
         self.v = v*np.pi / 180.0
 
     '''
-    called by getNED function
     Inputs:
+        states_image:   6x1 list, [pn,pe,pd,phi,theta,psi].T, states of the
+                        MAV (position and attitude only)
         gimbal_angles:  2x1 list, [alpha_az,alpha_el].T, gimbal position
                         angles
                         alpha_az is a right-handed roation about k^b
                         negative alpha_el points towards ground
     '''
-    def setAngles(self, gimbal_angles):
+    def setStatesandAngles(self, states_image, gimbal_angles):
+        self.pn = states_image[0]
+        self.pe = states_image[1]
+        self.pd = states_image[2]
+        self.phi = states_image[3]
+        self.theta = states_image[4]
+        self.psi = states_image[5]
+
         self.alpha_az = gimbal_angles[0]
         self.alpha_el = gimbal_angles[1]
 
     '''
     gets position of the object in the inertial frame
+    Required Set Previously:
+        self.states_image   [pn,pe,pd,phi,theta,psi]
+        self.gimbal_angles  [alpha_az,alpha_el]
+                            alpha_az is a right-handed rotation about k^b
+                            negative alpha_el points towards ground
     Inputs:
-        states_image:   6x1 ndarray, [pn,pe,pd,phi,theta,psi].T, current MAV states
-        gimbal_angles:  2x1 ndarray, [alpha_az,alpha_el].T, gimbal position
-                        angles
-                        alpha_az is a right-handed roation about k^b
-                        negative alpha_el points towards ground
         pixel_pt:       2x1 ndarray, [u,v].T, pixel location from origin in top
                         left corner
         image_size:     2x1 ndarray, [height,width].T, size of image
@@ -67,20 +76,11 @@ class camClick:
                         currently doesn't work if initialized in this method,
                         must be passed in
     '''
-    def getNED(self,states_image,gimbal_angles,pixel_pt,image_size,R_b_i):
-        pn = states_image[0]
-        pe = states_image[1]
-        pd = states_image[2]
-        phi = states_image[3]
-        theta = states_image[4]
-        psi = states_image[5]
-
-        self.setAngles(gimbal_angles)
-
-        position = np.array([[pn],[pe],[pd]])
+    def getNED(self,pixel_pt,image_size,R_b_i):
+        position = np.array([[self.pn],[self.pe],[self.pd]])
 
         #used in transformation
-        h = -pd
+        h = -self.pd
         k_i = np.array([[0],[0],[1]])
 
         #rotation matrices. nomenclature is R_[initial fram]_[final frame]
@@ -132,23 +132,25 @@ ROS class for managing data
 '''
 class listen_and_locate:
 
-    def __init__(self):
-        self.image_sub = rospy.Subscriber('/usb_cam/image_raw',Image,self.image_cb)
+    def __init__(self,gimbal_pos,v):
+        self.image_sub = rospy.Subscriber('/image_stamped',stampedImage,self.image_cb)
         self.pub = rospy.Publisher('pixel_data', IntList, queue_size=10)
         self.bridge = CvBridge()
 
-        #parameters for camera (eventually will be obtained on initialization)
-        gimbal_pos = [0.5,0,0.1]
-        v = 45.0
         self.camera = camClick(gimbal_pos,v)
 
         self.refPt = IntList()
 
     def image_cb(self, data):
         try:
-            self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            self.cv_image = self.bridge.imgmsg_to_cv2(data.image, "bgr8")
         except CvBridgeError as e:
             print(e)
+
+        gimbal_pos = [data.alpha_az, data.alpha_el]
+        states_image = [data.pn,data.pe,data.pd,data.phi,data.theta,data.psi]
+
+        self.camera.setStatesandAngles(states_image,gimbal_pos)
 
         #creates a named window for our camera, waits for mouse click
         cv2.namedWindow('spotter_cam')
@@ -165,13 +167,13 @@ class listen_and_locate:
             self.refPt.data = [x,y]
 
             #these things all should come from the stampedImage
-            states_image = [100.0,10.0,-60.0,0.0*np.pi/180.0,0.0*np.pi/180.0,0.0*np.pi/180.0]
+            self.states_image = [100.0,10.0,-60.0,0.0*np.pi/180.0,0.0*np.pi/180.0,0.0*np.pi/180.0]
             gimbal_angles = [0.0,-45.0*np.pi/180.0]
 
             #still annoyingly necessary
-            phi = states_image[3]
-            theta = states_image[4]
-            psi = states_image[5]
+            phi = self.states_image[3]
+            theta = self.states_image[4]
+            psi = self.states_image[5]
 
             R_b_i = np.array([[np.cos(theta)*np.cos(psi),np.cos(theta)*np.sin(psi),-np.sin(theta)], \
                                    [np.sin(phi)*np.sin(theta)*np.cos(psi)-np.cos(phi)*np.sin(psi),np.sin(phi)*np.sin(theta)*np.sin(psi) \
@@ -182,13 +184,18 @@ class listen_and_locate:
             size = self.cv_image.shape
             image_size = [size[0],size[1]]
 
-            self.refPt.data = self.camera.getNED(states_image,gimbal_angles,self.refPt.data,image_size,R_b_i)
+            self.refPt.data = self.camera.getNED(self.refPt.data,image_size,R_b_i)
 
             self.pub.publish(self.refPt)
 
 def main(args):
     rospy.init_node('locator', anonymous=True)
-    listen = listen_and_locate()
+
+    #parameters for camera (eventually will be obtained on initialization)
+    gimbal_pos = [0.5,0,0.1]
+    v = 45.0
+
+    listen = listen_and_locate(gimbal_pos,v)
     try:
         rospy.spin()
     except KeyBoardInterrupt:
