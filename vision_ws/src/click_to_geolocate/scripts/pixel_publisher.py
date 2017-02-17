@@ -39,7 +39,7 @@ def click_and_pub_pixel_data(event, x, y, flags, param):
 
         src = np.array([[[x, y]]], dtype = np.float64)  #src is input pixel coordinates
 
-        #undistortPoints() returns the projection of the pixel, to the image sensor
+        #undistortPoints() returns a 3D array of the projection of the pixel, to the image sensor
         undistortedPixel = cv2.undistortPoints(src,camMatrix,distCoeff)
 
         #multiply the projection by the focal length and then add the offset to convert back to pixels
