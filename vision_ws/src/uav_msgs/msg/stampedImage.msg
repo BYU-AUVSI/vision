@@ -10,5 +10,7 @@ float32 psi
 float32 p
 float32 q
 float32 r
+float32 alpha_az
+float32 alpha_el
 
 sensor_msgs/Image image
