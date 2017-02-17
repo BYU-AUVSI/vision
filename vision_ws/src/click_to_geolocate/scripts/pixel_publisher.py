@@ -12,17 +12,24 @@ from click_to_geolocate.msg import IntList
 from click_to_geolocate.msg import FloatList
 
 #camera calibration parameters (this calibration could be re-done to be more accurate)
+#intrinsic parameters
 fx = 474.788647 #x focal length in pixels
 ox = 311.008804 #x coordinate of optical center in pixels
 fy = 467.476429 #y focal length in pixels
 oy = 212.330799 #y coordinate of optical center in pixels
 
+#distortion coefficients
+k1 = -4.67962e-01
+k2 = 2.92767e-01
+p1 = 1.810e-03
+p2 = 1.383e-03
+k3 = -1.19120e-01
+
 camMatrix = np.array([[fx, 0.0, ox],
                       [0.0, fy, oy],
                       [0.0, 0.0, 1.0]], dtype = np.float64)
 
-distCoeff = np.array([-4.67962e-01, 2.92767e-01, 1.810e-03,
-                    1.383e-03, -1.19120e-01], dtype = np.float64)
+distCoeff = np.array([k1, k2, p1, p2, k3], dtype = np.float64)
 
 
 #define mouse callback function to capture and publish pixel data
