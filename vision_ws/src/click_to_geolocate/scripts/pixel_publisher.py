@@ -9,12 +9,43 @@ import cv2
 import numpy as np
 from std_msgs.msg import String
 from click_to_geolocate.msg import IntList
+from click_to_geolocate.msg import FloatList
+
+#camera calibration parameters (this calibration could be re-done to be more accurate)
+fx = 474.788647 #x focal length in pixels
+ox = 311.008804 #x coordinate of optical center in pixels
+fy = 467.476429 #y focal length in pixels
+oy = 212.330799 #y coordinate of optical center in pixels
+
+camMatrix = np.array([[fx, 0.0, ox],
+                      [0.0, fy, oy],
+                      [0.0, 0.0, 1.0]], dtype = np.float64)
+
+distCoeff = np.array([-4.67962e-01, 2.92767e-01, 1.810e-03,
+                    1.383e-03, -1.19120e-01], dtype = np.float64)
+
 
 #define mouse callback function to capture and publish pixel data
 def click_and_pub_pixel_data(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
-        refPt = IntList()
-        refPt.data = [x,y]
+        refPt = FloatList()
+
+        src = np.array([[[x, y]]], dtype = np.float64)  #src is input pixel coordinates
+
+        #undistortPoints() returns the projection of the pixel, to the image sensor
+        undistortedPixel = cv2.undistortPoints(src,camMatrix,distCoeff)
+
+        #multiply the projection by the focal length and then add the offset to convert back to pixels
+        undistortedPixel1 = undistortedPixel[0][0][0]*fx + ox
+        undistortedPixel2 = undistortedPixel[0][0][1]*fy + oy
+
+        #the new undistorted pixel values
+        x_new = undistortedPixel1
+        y_new = undistortedPixel2
+
+        #populate the refPt
+        refPt.data = [x_new,y_new]
+
         #rospy.loginfo(refPt)
         pub.publish(refPt)
 
@@ -27,7 +58,7 @@ cap = cv2.VideoCapture(0)
 #define the main talker function
 def talker():
     global pub
-    pub = rospy.Publisher('pixel_data', IntList, queue_size=10)
+    pub = rospy.Publisher('pixel_data', FloatList, queue_size=10)
     rospy.init_node('pixel_publisher', anonymous=True)
     rate = rospy.Rate(30) #approximate "frame rate"
     while not rospy.is_shutdown():

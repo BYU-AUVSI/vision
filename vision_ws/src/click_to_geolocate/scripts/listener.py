@@ -9,6 +9,7 @@
 import rospy
 from std_msgs.msg import String
 from click_to_geolocate.msg import IntList
+from click_to_geolocate.msg import FloatList
 
 
 def callback(data):
@@ -23,7 +24,7 @@ def listener():
     # run simultaneously.
     rospy.init_node('listener', anonymous=True)
 
-    rospy.Subscriber('pixel_data', IntList, callback)
+    rospy.Subscriber('pixel_data', FloatList, callback)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
