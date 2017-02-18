@@ -1,17 +1,15 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(sniper_cam)
+project(image_capture)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(OpenCV REQUIRED)
+find_package(OpenCV ..)
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
+  cv_bridge
+  sensor_msgs
   rospy
   std_msgs
-  image_transport
-  sensor_msgs
-  cv_bridge
 )
 
 ## System dependencies are found with CMake's conventions
@@ -105,33 +103,43 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES sniper_cam
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  LIBRARIES image_capture
+#  CATKIN_DEPENDS cv_bridge opencv2 rospy std_msgs
 #  DEPENDS system_lib
 )
 
 ###########
 ## Build ##
 ###########
-# include_directories(include ${catkin_INCLUDE_DIRS})
-
-# add_executable(talker src/talker.cpp)
-# target_link_libraries(talker ${catkin_LIBRARIES})
-# add_dependencies(talker beginner_tutorials_generate_messages_cpp)
-
-# add_executable(listener src/listener.cpp)
-# target_link_libraries(listener ${catkin_LIBRARIES})
-# add_dependencies(listener beginner_tutorials_generate_messages_cpp)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include)
-include_directories(include ${catkin_INCLUDE_DIRS})
+# include_directories(include)
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+)
 
-add_executable(sniper_cam src/sniper_cam_publisher.cpp include/sniper_cam_publisher.h)
-target_link_libraries(sniper_cam ${catkin_LIBRARIES})
-add_dependencies(sniper_cam sniper_cam_generate_messages_cpp)
+## Declare a C++ library
+# add_library(image_capture
+#   src/${PROJECT_NAME}/image_capture.cpp
+# )
 
+## Add cmake target dependencies of the library
+## as an example, code may need to be generated before libraries
+## either from message generation or dynamic reconfigure
+# add_dependencies(image_capture ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+## Declare a C++ executable
+# add_executable(image_capture_node src/image_capture_node.cpp)
+
+## Add cmake target dependencies of the executable
+## same as for the library above
+# add_dependencies(image_capture_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+## Specify libraries to link a library or executable target against
+# target_link_libraries(image_capture_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -148,7 +156,7 @@ add_dependencies(sniper_cam sniper_cam_generate_messages_cpp)
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS sniper_cam sniper_cam_node
+# install(TARGETS image_capture image_capture_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -173,7 +181,7 @@ add_dependencies(sniper_cam sniper_cam_generate_messages_cpp)
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_sniper_cam.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_image_capture.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
