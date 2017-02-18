@@ -13,8 +13,7 @@ import numpy as np
 import sys
 from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import String
-from click_to_geolocate.msg import IntList
-from sensor_msgs.msg import Image
+from click_to_geolocate.msg import FloatList
 from uav_msgs.msg import stampedImage
 
 '''
@@ -27,7 +26,7 @@ class camClick:
     Imputs:
         gimbal_pos:     3x1 list, [north,east,down].T, position of gimbal
                         center relative to MAV body center
-        v:              float, field of view of camera in degrees
+        v:              2x1 float, [v_x,v_y].T, field of view of camera in degrees
     '''
     def __init__(self,gimbal_pos,v):
 
@@ -39,7 +38,8 @@ class camClick:
         self.alpha_el = -np.pi/4
 
         #set field of view
-        self.v = v*np.pi / 180.0
+        self.v_w = v[0]*np.pi / 180.0
+        self.v_h = v[1]*np.pi / 180.0
 
     '''
     Inputs:
@@ -103,8 +103,10 @@ class camClick:
         #l-unit vector from camera towards click (assumes camera FOV is square wrt pixels)
         #look in literature for how to do this in a rectangular image
 
-        M = height
-        f = M / (2.0*np.tan(self.v/2.0))
+        M_w = width
+        f_w = M_w / (2.0*np.tan(self.v_w/2.0))
+        M_h = height
+        f_h = M_h / (2.0*np.tan(self.v_h/2.0))
 
         #distances in pixels from origin of camera frame. origin is center of image.
         #don't forget that y is down in camera frame
@@ -112,18 +114,19 @@ class camClick:
         eps_x = pt_x - width / 2.0
         eps_y = pt_y - height / 2.0
 
-        F = np.sqrt(f**2 + eps_x**2 + eps_y**2)
+        F_w = np.sqrt(f_w**2 + eps_x**2 + eps_y**2)
+        F_h = np.sqrt(f_h**2 + eps_x**2 + eps_y**2)
 
-        l_c = (1/F)*np.array([[eps_x],[eps_y],[f]])
+        l_c_w = (1/F_w)*np.array([[eps_x],[eps_y],[f_w]])
+        big_term_w = R_b_i.dot(R_g_b.dot(R_c_g.dot(l_c_w)))
+        den_w = np.dot(k_i.T,big_term_w)
+        l_c_h = (1/F_h)*np.array([[eps_x],[eps_y],[f_h]])
+        big_term_h = R_b_i.dot(R_g_b.dot(R_c_g.dot(l_c_h)))
+        den_h = np.dot(k_i.T,big_term_h)
 
-        big_term = R_b_i.dot(R_g_b.dot(R_c_g.dot(l_c)))
-
-        den = np.dot(k_i.T,big_term)
-
-        p_obj = position + R_b_i.dot(self.MAV_to_gimbal) + h*big_term/den
-
-        for i in range(0,3):
-            p_obj[i] = float(p_obj[i])
+        p_obj_w = position + R_b_i.dot(self.MAV_to_gimbal) + h*big_term_w/den_w
+        p_obj_h = position + R_b_i.dot(self.MAV_to_gimbal) + h*big_term_h/den_h
+        p_obj = [float(p_obj_h[0]),float(p_obj_w[1]),float(p_obj_w[2])]
 
         return p_obj
 
@@ -134,12 +137,13 @@ class listen_and_locate:
 
     def __init__(self,gimbal_pos,v):
         self.image_sub = rospy.Subscriber('/image_stamped',stampedImage,self.image_cb)
-        self.pub = rospy.Publisher('pixel_data', IntList, queue_size=10)
+        self.pub = rospy.Publisher('pixel_data', FloatList, queue_size=10)
         self.bridge = CvBridge()
 
         self.camera = camClick(gimbal_pos,v)
 
-        self.refPt = IntList()
+        self.pixPt = []
+        self.refPt = FloatList()
 
     def image_cb(self, data):
         try:
@@ -164,16 +168,13 @@ class listen_and_locate:
     '''
     def click_and_pub_pixel_data(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
-            self.refPt.data = [x,y]
-
-            #these things all should come from the stampedImage
-            self.states_image = [100.0,10.0,-60.0,0.0*np.pi/180.0,0.0*np.pi/180.0,0.0*np.pi/180.0]
-            gimbal_angles = [0.0,-45.0*np.pi/180.0]
+            self.pixPt = [x,y]
+            print(self.pixPt)
 
             #still annoyingly necessary
-            phi = self.states_image[3]
-            theta = self.states_image[4]
-            psi = self.states_image[5]
+            phi = self.camera.phi
+            theta = self.camera.theta
+            psi = self.camera.psi
 
             R_b_i = np.array([[np.cos(theta)*np.cos(psi),np.cos(theta)*np.sin(psi),-np.sin(theta)], \
                                    [np.sin(phi)*np.sin(theta)*np.cos(psi)-np.cos(phi)*np.sin(psi),np.sin(phi)*np.sin(theta)*np.sin(psi) \
@@ -184,7 +185,7 @@ class listen_and_locate:
             size = self.cv_image.shape
             image_size = [size[0],size[1]]
 
-            self.refPt.data = self.camera.getNED(self.refPt.data,image_size,R_b_i)
+            self.refPt.data = self.camera.getNED(self.pixPt,image_size,R_b_i)
 
             self.pub.publish(self.refPt)
 
@@ -193,7 +194,7 @@ def main(args):
 
     #parameters for camera (eventually will be obtained on initialization)
     gimbal_pos = [0.5,0,0.1]
-    v = 45.0
+    v = [45.0,45.0]
 
     listen = listen_and_locate(gimbal_pos,v)
     try:

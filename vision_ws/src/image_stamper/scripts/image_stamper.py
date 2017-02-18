@@ -8,16 +8,16 @@ from uav_msgs.msg import stampedImage
 import sys
 
 class imageStamper:
-    def __init__(self):
-        self.imageSub = rospy.Subscriber("/usb_cam/image_raw",Image,self.callback)
-        self.iSPub = rospy.Publisher("/image_stamped",stampedImage,queue_size=1)
+    def __init__(self,args):
+        self.imageSub = rospy.Subscriber(args[1],Image,self.callback)
+        self.iSPub = rospy.Publisher(args[2],stampedImage,queue_size=1)
         #when we have something publishing states, will need subscribers for that
 
         self.SI = stampedImage()
 
     def callback(self,data):
         #we actually won't use velocities and angles will be quaternions
-        pn = 100
+        pn = 0
         pe = 0
         pd = -100
         u = 0
@@ -52,11 +52,14 @@ class imageStamper:
 
 def main(args):
     rospy.init_node('stamper',anonymous=True)
-    imageSer=imageStamper()
+    imageSer=imageStamper(args)
     try:
         rospy.spin()
     except KeyBoardInterrupt:
         print("Shutting down")
 
 if __name__ == '__main__':
-    main(sys.argv)
+    if len(sys.argv) < 3:
+        print('Usage: rosrun image_stamper image_stamper.py <input_image_topic> <output_stamped_topic>')
+    else:
+        main(sys.argv)
