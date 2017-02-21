@@ -128,7 +128,7 @@ catkin_package(
 include_directories(include)
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(sniper_cam src/sniper_cam_publisher.cpp)
+add_executable(sniper_cam src/sniper_cam_publisher.cpp include/sniper_cam_publisher.h)
 target_link_libraries(sniper_cam ${catkin_LIBRARIES})
 add_dependencies(sniper_cam sniper_cam_generate_messages_cpp)
 

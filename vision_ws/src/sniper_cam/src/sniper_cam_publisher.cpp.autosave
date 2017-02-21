@@ -4,6 +4,11 @@
 #include "sniper_cam_publisher.h"
 
 
+// This node is meant to access the images from a local camera
+// using openCV and publish them as a ros message. The image transport
+// functionality allows the node to publish compressed images to minimize
+// the bandwidth of the transmitted images.
+
 
 
 namespace sniper_cam
@@ -12,26 +17,46 @@ Sniper_cam::Sniper_cam():
     it(image_transport::ImageTransport(nh))
 {
 
+    // variables to use in functions
+    // these are all private and should not be accessed
+    // outside the class.
     pub = it.advertise("sniper_cam/image", 1);
     nh;
     frame;
     msg;
 
 }
+
+// destructor function. Nesessary for all c++ classes
 Sniper_cam::~Sniper_cam()
 {
 
 }
 
+
+// void function that does all that needs to be done to publish 
+// the images
 void Sniper_cam::publish_image(){
-
+    
+    
+    // get access to local camera using open cv. We might want to change the
+    // input to this function to a ros parameter, but since we only plan on 
+    // using this node for the sniper camera we can assume the sniper camera will be
+    // camera 0. 
     cv::VideoCapture cap(0);
-
+    
+    // check if the camera has been accessed
     if(!cap.isOpened()) return;
-
+    
+    // set the loop rate to 15. The input to this should also be a ros parameter
+    // For the competition, this should be set to 1Hz.
     ros::Rate loop_rate(15);
-
+    
+    
+    // while the ros handler is running ok.
     while(nh.ok()){
+        
+        
         cap >> frame;
 
         if(!frame.empty()){
