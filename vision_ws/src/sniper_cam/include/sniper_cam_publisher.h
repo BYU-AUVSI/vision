@@ -12,21 +12,47 @@ namespace sniper_cam
 class Sniper_cam
 
 {
+
+protected:
+
+
+
+    // private parameters
+    struct params_s {
+
+        int camera_number;
+        int frame_rate;
+
+
+    };
+
+
+
 public:
 
     Sniper_cam();
     ~Sniper_cam();
+
+    // public function to call in main loop. This function will do most of the work
     void publish_image();
 
 private:
 
+    // private node handler
     ros::NodeHandle nh;
+
+    // private image transport handle
     image_transport::ImageTransport it;
+
+    // private image transport publsiher to advertise
     image_transport::Publisher pub;
 
-
+    // private variables
     cv::Mat frame;
     sensor_msgs::ImagePtr msg;
+
+    struct params_s params;
+
 
 
 };

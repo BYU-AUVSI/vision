@@ -4,6 +4,11 @@
 #include "sniper_cam_publisher.h"
 
 
+// This node is meant to access the images from a local camera
+// using openCV and publish them as a ros message. The image transport
+// functionality allows the node to publish compressed images to minimize
+// the bandwidth of the transmitted images.
+
 
 
 namespace sniper_cam
@@ -12,34 +17,72 @@ Sniper_cam::Sniper_cam():
     it(image_transport::ImageTransport(nh))
 {
 
-    pub = it.advertise("sniper_cam/image", 1);
+    // variables to use in functions
+    // these are all private and cannot not be accessed
+    // outside the class.
+
+    // publsiher
+    pub = it.advertise("sniper_cam/image", 5);
+
+    // private node handler
     nh;
+
+    // variable for the frame matrix
     frame;
+
+    // variable for msg
     msg;
 
+    // parameters
+    nh.param<int>("CAMERA_NUMBER", params.camera_number, 0);
+    nh.param<int>("FRAME_RATE", params.frame_rate, 1);
+
 }
+
+// destructor function. Nesessary for all c++ classes
 Sniper_cam::~Sniper_cam()
 {
 
 }
 
+
+// void function that does all that needs to be done to publish
+// the images
 void Sniper_cam::publish_image(){
 
-    cv::VideoCapture cap(0);
 
+    // get access to local camera using open cv. We might want to change the
+    // input to this function to a ros parameter, but since we only plan on
+    // using this node for the sniper camera we can assume the sniper camera will be
+    // camera 0.
+    cv::VideoCapture cap(params.camera_number);
+
+    // check if the camera has been accessed
     if(!cap.isOpened()) return;
 
-    ros::Rate loop_rate(15);
+    // set the loop rate to 15. The input to this should also be a ros parameter
+    // For the competition, this should be set to 1Hz.
+    ros::Rate loop_rate(params.frame_rate);
 
+
+    // while the ros handler is running ok.
     while(nh.ok()){
-        cap >> frame;
 
+
+        cap >> frame;
+        // check if grabbed frame is actually full with some content
         if(!frame.empty()){
+
+            // convert msg to a ros msg
             msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
+
+            // publish messages
             pub.publish(msg);
+
+            // wait for kill
             cv::waitKey(1);
         }
-
+        // spin and sleep
         ros::spinOnce();
         loop_rate.sleep();
     }
@@ -57,144 +100,6 @@ int main(int argc, char** argv)
     sniper_cam::Sniper_cam sc;
     sc.publish_image();
 
-
-
-
 }
-
-
-
-
-
-//#include "sniper_cam_publisher.h"
-
-
-//using namespace cv;
-//using namespace std;
-
-
-//namespace sniper_cam
-//{
-
-//Sniper_cam::Sniper_cam():
-//    _it(image_transport::ImageTransport(nh_))
-
-//{
-//    firstTime = true;
-//    cvi;
-//    image_pub = _it.advertise("sniper_cam", 1);
-
-
-
-//}
-
-//Sniper_cam::~Sniper_cam()
-//{
-
-//}
-
-
-
-//// takes a VideoCapture object ane while doing some
-//// simple checks. Then outputs the frame Matrix
-//Mat Sniper_cam::create_frame(VideoCapture cap)
-//{
-
-//    if (!cap.isOpened())  // if not success, exit program
-//    {
-//        cout << "Cannot open the video cam" << endl;
-//    }
-
-//    if (firstTime)
-//    {
-
-//        double dWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH);
-//        double dHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
-//        firstTime = false;
-//        cout << "Initial frame size Frame size : " << dWidth << " x " << dHeight << endl;
-//    }
-
-
-//    Mat frame;
-//    return frame;
-//}
-
-//// changes the frame size of the image
-//Mat Sniper_cam::change_frame_size(Mat frame, double width, double height)
-//{
-
-
-//}
-
-
-//// converts an opencv message to a ros message
-//sensor_msgs::Image Sniper_cam::cv_to_rosmsg(Mat frame){
-
-//    ros::Time time = ros::Time::now();
-
-//    cvi = frame;
-
-
-//    sensor_msgs::Image im;
-//    cvi.toImageMsg(im);
-
-//    return im;
-
-//}
-
-//void Sniper_cam::publish_image(sensor_msgs::Image im){
-
-
-//    image_pub.publish(im);
-//}
-
-//}
-
-//int main(int argc, char **argv)
-//{
-
-//    VideoCapture cap(1);
-//    ros::init(argc, argv, "rover_hub_node");
-//    ros::NodeHandle nh_private("~");
-//    int rate;
-//    nh_private.param<int>("rate", rate, 100);
-
-
-//    sniper_cam::Sniper_cam sc;
-
-
-
-//    ros::Rate loop_rate(rate);
-//    while(ros::ok())
-//    {
-//        Mat frame = sc.create_frame(cap);
-
-//        bool bSuccess = cap.read(frame);
-//        if (!bSuccess)
-//        {
-//            cout << "Cannot read a frame from the video stream" << endl;
-//            break;
-//        }
-//        imshow("Video", frame);
-//        if (waitKey(30) == 27)
-//        {
-//            cout << "esc key is pressed by user" << endl;
-//            break;
-//        }
-
-//        sensor_msgs::Image image = sc.cv_to_rosmsg(frame);
-//        sc.publish_image(image);
-
-//        ros::spinOnce();
-////        ro.publish_image();
-
-//        loop_rate.sleep();
-//        //ROS_WARN_STREAM("Spinning");
-//    }
-
-//////    ros::spin();
-//    return 0;
-//}
-
 
 
