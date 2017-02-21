@@ -22,7 +22,7 @@ Sniper_cam::Sniper_cam():
     // outside the class.
 
     // publsiher
-    pub = it.advertise("sniper_cam/image", 5);
+    pub = it.advertise("sniper_cam/image", 1);
 
     // private node handler
     nh;
