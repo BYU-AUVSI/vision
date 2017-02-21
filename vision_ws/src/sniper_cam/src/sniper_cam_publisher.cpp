@@ -34,7 +34,7 @@ Sniper_cam::Sniper_cam():
     msg;
 
     // parameters
-    nh.param<int>("CAMERA_NUMBER", params.camera_number, 0);
+    nh.param<int>("CAMERA_NUMBER", params.camera_number, 1);
     nh.param<int>("FRAME_RATE", params.frame_rate, 1);
 
 }
