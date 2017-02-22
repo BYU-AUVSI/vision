@@ -52,6 +52,7 @@ private:
     sensor_msgs::ImagePtr msg;
 
     struct params_s params;
+    uint16_t counter;
 
 
 

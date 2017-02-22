@@ -33,9 +33,11 @@ Sniper_cam::Sniper_cam():
     // variable for msg
     msg;
 
+    counter = 0;
+
     // parameters
-    nh.param<int>("CAMERA_NUMBER", params.camera_number, 1);
-    nh.param<int>("FRAME_RATE", params.frame_rate, 1);
+    nh.param<int>("CAMERA_NUMBER", params.camera_number, 0);
+    nh.param<int>("FRAME_RATE", params.frame_rate, 30);
 
 }
 
@@ -77,10 +79,18 @@ void Sniper_cam::publish_image(){
             msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
 
             // publish messages
-            pub.publish(msg);
+            if (counter == 0)
+            {
+                pub.publish(msg);
+                counter = params.frame_rate;
+            
+            }
+
+            counter--;
+
 
             // wait for kill
-            cv::waitKey(1);
+            //cv::waitKey(1);
         }
         // spin and sleep
         ros::spinOnce();
