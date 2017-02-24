@@ -17,6 +17,8 @@ import numpy as np
 VERBOSE = False
 # create CvBridge object
 bridge = CvBridge()
+global_var={'image_n':0}
+globals().update(global_var)
 
 def image_callback(msg):
 
@@ -29,21 +31,11 @@ def image_callback(msg):
     img_np = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
 
     cv2.imshow('recieved image', img_np)
+    cv2.imwrite('images/image' + str(image_n)+ '.jpg', img_np)
+    global image_n
+    image_n +=1
     cv2.waitKey(1)
 
-    # Feature detectors using 
-
-    # try:
-    #     # Convert your ROS Image message to OpenCV2
-    #     cv2_img = bridge.imgmsg_to_cv2(msg, "bgr8")
-    # except CvBridgeError, e:
-    #     print(e)
-    # else:
-    #     # Display the image
-    #     cv2.imshow('sniper_cam', cv2_img)
-    #     cv2.waitKey(1)
-    #     # Save the image
-    #     #cv2.imwrite('camera_image.jpeg', cv2_img)
 
 def image_subscriber():
     rospy.init_node('sniper_image_subscriber')
