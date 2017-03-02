@@ -76,6 +76,10 @@ void Sniper_cam::publish_image(){
         if(!frame.empty()){
 
             // convert msg to a ros msg
+
+            //resize the image from 1080p 576p (~half size)
+            cv::resize(frame,frame,cv::Size(1024,576)); //16:9 aspect ratio
+
             msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
 
             // publish messages
@@ -83,7 +87,7 @@ void Sniper_cam::publish_image(){
             {
                 pub.publish(msg);
                 counter = params.frame_rate;
-            
+
             }
 
             counter--;
@@ -111,5 +115,3 @@ int main(int argc, char** argv)
     sc.publish_image();
 
 }
-
-
