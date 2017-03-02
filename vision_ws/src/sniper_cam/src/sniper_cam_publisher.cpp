@@ -75,11 +75,10 @@ void Sniper_cam::publish_image(){
         // check if grabbed frame is actually full with some content
         if(!frame.empty()){
 
-            // convert msg to a ros msg
-
             //resize the image from 1080p 576p (~half size)
             cv::resize(frame,frame,cv::Size(1024,576)); //16:9 aspect ratio
 
+            // convert msg to a ros msg
             msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
 
             // publish messages
