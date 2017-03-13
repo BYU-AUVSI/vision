@@ -10,52 +10,58 @@ from functools import partial
 class Application(Frame):
     # method that destroys the old frame and loads a new image
     def loadNextImage(self):
-    # if the autodiscard function job exists
-        if self._job is not None:
+        # if the autodiscard function job exists
+        #if self.job is not None:
             # cancel the existing job
-            self.after_cancel(self._job)
+            #self.after_cancel(self.job)
             # restart the discard function to sync with the two second delay
-            self._job= self.after(self.delay, self.autoDiscard)
+            #self.job= self.after(self.delay, self.autoDiscard)
         # creates the file name of the input image in the image directory
-        filename = self.imagedir + '/image' + str(self.i)+ '.jpg'
-        # try to open the file
+        if self.rotateImage:
+            self.rotateImage=None
+
+        if self.rect:
+            self.canvas.delete(self.rect)
+            self.rect=None
+
         try:
+            filename = self.imagedir  + '/' + self.images[self.i]
             # if there is a valid file then do not display the wait message
-            if os.stat(filename).st_size > 0:
-               self.error.grid_forget()
-        except OSError:
+            self.error.grid_forget()
+        except IndexError:
             # else display a wait for image message on the GUI
             self.error.grid(row=2,column=1)
             return
-            # if there have been previous images then destroy it
-            if self.i > 0:
-                self.panel.destroy()
-            # open a new image from the image directory
-            self.image = Image.open(self.imagedir + '/image' + str(self.i)+ '.jpeg')
-            # resizes the image so that all are the same size
-            self.image = self.image.resize((1200, 800))
-            # converts the PIL image to a tk image
-            image_tk = ImageTk.PhotoImage(self.image)
-            # create the label with the embedded image
-            self.panel = Label(self, image=image_tk)
-            # save the image as an attribute of the panel
-            self.panel.image = image_tk
-            # display the image in the GUI across 4 columns
-            self.panel.grid(row=0, column=1, columnspan=4)
-            # increment the image number
-            self.i += 1
+        # if there have been previous images then destroy it
+        #if self.i > 0:
+            #self.panel.destroy()
+        # open a new image from the image directory
+        self.image = Image.open(filename)
+        # resizes the image so that all are the same size
+        self.image = self.image.resize((400, 400))
+        # converts the PIL image to a tk image
+        self.image_tk = ImageTk.PhotoImage(self.image)
+        # create the label with the embedded image
+        self.canvas.create_image(500,240,anchor=CENTER, image=self.image_tk)
+        # increment the image number
+        self.i += 1
 
     # function that discards the current image and calls load next image on a automatic delay
     def autoDiscard(self):
+        self.images = os.listdir('images/')
+        self.rotateValue.set(0)
         if self.image:
             # save the discarded image in a folder in case we want to go back and review them
             self.image.save(self.discarddir + '/image_' + str(self.i) +'.jpg')
+        self.job= self.after(self.delay, self.autoDiscard)
         # grab the next image
         self.loadNextImage()
 
     # save the image to a specific target directory
     def saveImage(self, discard=False):
-    # if the image exists
+        self.pauseDiscard()
+        self.rotateValue.set(0)
+        # if the image exists
         if self.image:
                 # if we are manually discarding the image from a button click
             if discard:
@@ -71,8 +77,139 @@ class Application(Frame):
             # grab the next image
             self.loadNextImage()
 
+    def submitInfo(self):
+        self.imageInfo = {"Target Color" : self.tColorContent.get(), "Target Shape" : self.tShapeContent.get(), "Letter Color" : self.lColorContent.get(), "Letter" : self.letterContent.get()}
+        print(self.imageInfo)
+        self.tColorContent.set("")
+        self.tShapeContent.set("")
+        self.lColorContent.set("")
+        self.letterContent.set("")
+
+    def restartDiscard(self):
+        self.job = self.after(self.delay, self.autoDiscard)
+
+    def pauseDiscard(self):
+        try:
+            self.after_cancel(self.rotateJob)
+        except AttributeError:
+            pass
+        self.after_cancel(self.job)
+        
+        
+    def sampleRotate(self):
+        width, height = self.image.size
+        expand = False if height > 650 else True
+        if self.rotateValue.get() != self.refValue:
+            self.refValue = self.rotateValue.get()
+            if self.croppedImage:
+                self.rotateImage = self.croppedImage.rotate(self.refValue, resample=Image.BICUBIC, expand=expand)
+            else:
+                self.rotateImage = self.image.rotate(self.refValue, resample=Image.BICUBIC, expand=expand)
+            #self.panel.destroy()
+            # converts the PIL image to a tk image
+            self.image_tk = ImageTk.PhotoImage(self.rotateImage)
+            # create the label with the embedded image
+            self.canvas.create_image(500,240,anchor=CENTER, image=self.image_tk)
+            # display the image in the GUI across 5 columns
+            #self.panel.grid(row=0, column=1, columnspan=5)
+        self.rotateJob = self.after(1000, self.sampleRotate)
+
+
+    def on_button_press(self, event):
+        if self.rect:
+            self.canvas.delete(self.rect)
+        # save mouse drag start position
+        self.start_x = event.x
+        self.start_y = event.y
+        # create rectangle if not yet exist
+        #if not self.rect:
+        self.rect = self.canvas.create_rectangle(self.x, self.y, 1, 1, fill="")
+
+    def on_move_press(self, event):
+        self.curX, self.curY = (event.x, event.y)
+        # expand rectangle as you drag the mouse
+        self.canvas.coords(self.rect, self.start_x, self.start_y, self.curX, self.curY)
+
+    def on_button_release(self, event):
+        pass
+
+    def right_click(self, event):
+        if self.rect:
+            self.canvas.delete(self.rect)
+            self.rect=None
+    #def drawRectangle(self):
+         
+
+    def cropImage(self):
+        if not self.rect:
+            return
+
+        width, height = self.image.size
+        offsetX = width - 100
+        offsetY = height - 360
+        self.toBeCropped = self.image
+
+        if self.croppedImage:
+            self.toBeCropped = self.croppedImage
+        
+        if self.rotateImage:
+            rWidth, rHeight = self.rotateImage.size
+        
+        if self.rotateImage:
+            if rWidth != width:
+                offsetX = offsetX - (rWidth - width) / 2
+                offsetY = offsetY - (rHeight - height) / 2
+                self.toBeCropped = self.rotateImage
+
+        if self.image:
+           # print(self.toBeCropped.size)
+            #print('{0} {1}'.format(offsetX, offsetY))
+            self.croppedImage = self.toBeCropped.crop((self.start_x-offsetX, self.start_y-offsetY, self.curX-offsetX, self.curY-offsetY))
+            self.croppedImage = self.croppedImage.resize((400,400))
+            #print('{0} {1} {2} {3}'.format(self.start_x, self.start_y, self.curX, self.curY))
+            self.image_tk = ImageTk.PhotoImage(self.croppedImage)
+            # create the label with the embedded image
+            self.canvas.create_image(500,240,anchor=CENTER, image=self.image_tk)
+            self.canvas.delete(self.rect)
+
+    def undoCrop(self):
+        if self.croppedImage:
+            self.rotateImage=None
+            self.croppedImage=None
+            self.rotateValue.set(0)
+            self.image_tk = ImageTk.PhotoImage(self.image)
+            # create the label with the embedded image
+            self.canvas.create_image(500,240,anchor=CENTER, image=self.image_tk)
+
     # create the buttons for the GUI and attach the corresponding functions
     def createWidgets(self):
+        self.crop = Button(self, width=10, height=1, text="CROP", command=self.cropImage)
+        self.crop.grid(row=1, column=6)
+        self.undo = Button(self, width=10, heigh=1, text="UNDO", command=self.undoCrop)
+        self.undo.grid(row=2, column=6)
+        #self.select = Button(self, width=10, height=1, text="SELECT", command=self.drawRectangle)
+        #self.select.grid(row=1, column=6)
+        # create the button that allows us to submit the information
+        self.submit = Button(self, width=20, height=1, text="SUBMIT", fg="green", command=self.submitInfo)
+        self.submit.grid(row=2, column=4, columnspan=2)
+
+        self.rotateValue = IntVar()
+        self.rotateValue.set(0)
+        self.refValue = 0
+        self.rotateLabel = Label(self, text="Counter Clockwise >>")
+        self.rotateLabel.grid(row=3, column=4, columnspan=2)
+        self.rotateScale = Scale(self, from_=0, to=360, orient=HORIZONTAL, width=10, length=150, sliderlength=15, variable=self.rotateValue)
+        self.rotateScale.grid(row=4, column=4, columnspan=2)
+
+        #self.rotateImage = self.rotateImage.resize(10,10)
+        self.rotateButton = Button(self, text="START ROTATING", width=15, height=1, command=self.sampleRotate)
+        self.rotateButton.grid(row=5, column=4, columnspan=2)
+
+        self.start = Button(self, width=9, height=1, text="START", command=self.restartDiscard)
+        self.start.grid(row=1, column=4, sticky=E)
+        self.pause = Button(self, width=8, height=1, text="PAUSE", command=self.pauseDiscard)
+        self.pause.grid(row=1, column=5, sticky=W)
+        self.after_cancel(self.job)
         # create the button that allows us to discard the image, attaches the save image function with discard always True
         self.discard= Button(self, width=20, height=1, text="DISCARD", command=partial(self.saveImage,True))
         # display the button on the GUI
@@ -84,14 +221,42 @@ class Application(Frame):
         self.save.grid(row=1, column=2)
 
         # create the button that allows us to quit the program
-        self.quit = Button(self, width=15, height=1, text="QUIT", fg="red", command=self.quit)
+        self.quit = Button(self, width=10, height=1, text="QUIT", fg="red", command=self.quit)
         # display the button on the GUI
-        self.quit.grid(row=1, column=4)
+        self.quit.grid(row=6, column=6)
+
+        self.tColorLabel = Label(self, text="Target Color")
+        self.tColorLabel.grid(row=3,column=1)
+
+        self.tColorContent = StringVar()
+        self.targetColor = Entry(self, width=20, textvariable=self.tColorContent)
+        self.targetColor.grid(row=4,column=1)
+
+        self.tShapeLabel = Label(self, text="Target Shape")
+        self.tShapeLabel.grid(row=5,column=1)
+
+        self.tShapeContent = StringVar()
+        self.targetShape = Entry(self, width=20, textvariable=self.tShapeContent)
+        self.targetShape.grid(row=6,column=1)
+
+        self.lColorLabel = Label(self, text="Letter Color")
+        self.lColorLabel.grid(row=3,column=2)
+
+        self.lColorContent = StringVar()
+        self.letterColor = Entry(self, width=20, textvariable=self.lColorContent)
+        self.letterColor.grid(row=4,column=2)
+
+        self.letterLabel = Label(self, text="Letter")
+        self.letterLabel.grid(row=5,column=2)
+
+        self.letterContent = StringVar()
+        self.letter = Entry(self, width=20, textvariable=self.letterContent)
+        self.letter.grid(row=6,column=2)
 
         # create a label to explain the functionality of the radio buttons
-        w = Label(self, text="Select Target:")
+        self.targetLabel = Label(self, text="Select Target:")
         # display the label on the GUI
-        w.grid(row=1,column=3)
+        self.targetLabel.grid(row=1,column=3)
 
         # create a integer object to pass to the radio button
         self.v = IntVar()
@@ -120,14 +285,17 @@ class Application(Frame):
 
     # initialize the application
     def __init__(self, master=None):
+        self.images = os.listdir('images/')
         #input image counter
         self.i = 0
         # auto discard delay time in milliseconds
         self.delay = 2000
         # create the image file and initialize it to none
         self.image = None
+        self.rotateImage = None
+        self.croppedImage = None
         # read in the second argument as the number of targets
-        self.targets=int(sys.argv[1])
+        self.targets=5
         # create the frame
         Frame.__init__(self, master)
         # pack it up
@@ -146,20 +314,30 @@ class Application(Frame):
         self.imagedir = os.path.join(os.path.dirname(
             os.path.realpath(__file__)), 'images')
         if not os.path.isdir(self.imagedir):
-            os.makedires(self.imagedir)
-
+            os.makedirs(self.imagedir)
+        self.x = self.y = 0
+        self.canvas = Canvas(self, height=480, width=1000, cursor="cross")
+        self.canvas.grid(row=0, column=1, columnspan=6)
+        self.rect=None
+        self.canvas.bind("<ButtonPress-1>", self.on_button_press)
+        self.canvas.bind("<ButtonPress-3>", self.right_click)
+        self.canvas.bind("<B1-Motion>", self.on_move_press)
+        self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
         # start the auto discard function
-        self._job = self.after(self.delay, self.autoDiscard)
+        self.job = self.after(self.delay, self.autoDiscard)
         # create the wait for next image error
         self.error = Label(self, text='WAIT FOR NEXT IMAGE')
         # load the first image
         self.loadNextImage()
         # add all the buttons
         self.createWidgets()
+        
 
 # create the application and run it
 root = Tk()
+width, height = root.winfo_screenwidth(), root.winfo_screenheight()
 app = Application(master=root)
+root.geometry('%dx%d+0+0' % (width,height))
 app.mainloop()
 root.destroy()
 
