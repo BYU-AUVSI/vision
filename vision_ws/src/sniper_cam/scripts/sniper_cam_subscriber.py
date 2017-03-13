@@ -28,7 +28,7 @@ def image_callback(msg):
     # direct conversion to CV2
 
     np_arr = np.fromstring(msg.data, np.uint8)
-    img_np = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR)
+    img_np = cv2.imdecode(np_arr, 1)
 
     cv2.imshow('recieved image', img_np)
     cv2.imwrite('images/image' + str(image_n)+ '.jpg', img_np)
