@@ -140,14 +140,10 @@ class listen_and_locate:
         self.image_sub = rospy.Subscriber('/image_stamped',stampedImage,self.image_cb)
         self.pub = rospy.Publisher('pixel_data', FloatList, queue_size=10)
         self.bridge = CvBridge()
-
         self.camera = camClick(gimbal_pos,v)
 
         self.pixPt = []
         self.refPt = FloatList()
-
-        self.br_1 = tf.TransformBroadcaster()
-
 
     def image_cb(self, data):
         try:

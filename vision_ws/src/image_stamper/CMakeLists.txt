@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   uav_msgs
-  click_to_geolocate
+#  click_to_geolocate
 )
 
 #catkin_package(CATKIN_DEPENDS message_runtime)

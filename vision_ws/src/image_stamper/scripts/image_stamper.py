@@ -6,44 +6,42 @@ from sensor_msgs.msg import Image
 import time
 from uav_msgs.msg import stampedImage
 import sys
+import tf
 
 class imageStamper:
     def __init__(self,args):
         self.imageSub = rospy.Subscriber(args[1],Image,self.callback)
         self.iSPub = rospy.Publisher(args[2],stampedImage,queue_size=1)
-        #when we have something publishing states, will need subscribers for that
+        self.listener = tf.TransformListener()
 
+        #when we have something publishing states, will need subscribers for that
         self.SI = stampedImage()
 
     def callback(self,data):
-        #we actually won't use velocities and angles will be quaternions
-        pn = 0
-        pe = 0
+
+        image_time = data.header.stamp
+        
+        try:
+            now = image_time
+            self.listener.waitForTransform("/turtle1", "/turtle2", now, rospy.Duration(1.0))
+            (trans, rot) = self.listener.lookupTransform("/turtle1", "/turtle2", now)
+        except (tf.Exception, tf.LookupException, tf.ConnectivityException):
+            print('e')
+
+        phi,theta,psi = tf.transformations.euler_from_quaternion(rot)
+
+        pn,pe,pd = trans
         pd = -100
-        u = 0
-        v = 0
-        w = 0
-        phi = 0.0*np.pi/180.0
-        theta = 0.0*np.pi/180.0
-        psi = 0.0*np.pi/180.0
-        p = 0
-        q = 0
-        r = 0
+
         alpha_az = 0.0*np.pi/180.0
         alpha_el = -45.0*np.pi/180.0
 
         self.SI.pn = pn
         self.SI.pe = pe
         self.SI.pd = pd
-        self.SI.u = u
-        self.SI.v = v
-        self.SI.w = w
         self.SI.phi = phi
         self.SI.theta = theta
         self.SI.psi = psi
-        self.SI.p = p
-        self.SI.q = q
-        self.SI.r = r
         self.SI.alpha_az = alpha_az
         self.SI.alpha_el = alpha_el
         self.SI.image = data

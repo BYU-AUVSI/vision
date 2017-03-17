@@ -53,7 +53,6 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    IntList.msg
    FloatList.msg
-   FW_State.msg
    )
 
 ## Generate services in the 'srv' folder
