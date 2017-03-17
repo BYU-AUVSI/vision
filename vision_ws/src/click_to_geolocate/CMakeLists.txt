@@ -8,9 +8,11 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  sensor_msgs
   cv_bridge
   message_generation
   uav_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -51,6 +53,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    IntList.msg
    FloatList.msg
+   FW_State.msg
    )
 
 ## Generate services in the 'srv' folder
@@ -71,6 +74,7 @@ find_package(catkin REQUIRED COMPONENTS
  generate_messages(
    DEPENDENCIES
    std_msgs
+   sensor_msgs
  )
 
 ################################################
@@ -105,7 +109,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS #include
   LIBRARIES click_to_geolocate
-  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime cv_bridge uav_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime cv_bridge uav_msgs tf sensor_msgs
   DEPENDS system_lib
 )
 

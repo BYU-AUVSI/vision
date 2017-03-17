@@ -10,7 +10,7 @@ find_package(catkin REQUIRED
   message_generation
 )
 
-add_message_files(FILES stampedImage.msg)
+add_message_files(FILES stampedImage.msg FW_State.msg)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -69,7 +69,8 @@ add_message_files(FILES stampedImage.msg)
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
    DEPENDENCIES
-   sensor_msgs#   std_msgs
+   sensor_msgs
+   std_msgs
  )
 
 ################################################
@@ -104,7 +105,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES uav_msgs
-#  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs
+  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -127,7 +128,9 @@ include_directories(
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(uav_msgs ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(uav_msgs
+#${${PROJECT_NAME}_EXPORTED_TARGETS}
+#${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 # add_executable(uav_msgs_node src/uav_msgs_node.cpp)
