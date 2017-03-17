@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   uav_msgs
+  click_to_geolocate
 )
 
 #catkin_package(CATKIN_DEPENDS message_runtime)
@@ -104,8 +105,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES cvb_tut
+  INCLUDE_DIRS include
+  LIBRARIES click_to_geolocate
   CATKIN_DEPENDS roscpp rospy sensor_msgs uav_msgs
 #  DEPENDS system_lib
 )

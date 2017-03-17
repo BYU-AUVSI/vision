@@ -9,10 +9,24 @@
 import rospy
 from std_msgs.msg import String
 from click_to_geolocate.msg import FloatList
+import numpy as np
+
 
 
 def callback(data):
+    earth_radius_utah = 6370000
+    lat_home = 39.9785960
+    lon_home = -112.0037920
+    pn = data.data[0]
+    pe = data.data[1]
+
+    lat = (pn/earth_radius_utah)*180/np.pi + lat_home
+    lon = (pe/(earth_radius_utah*np.cos(lat_home*np.pi/180)))*180/np.pi + lon_home
+
     print data.data
+
+    print('Latitude = ' + str(lat))
+    print('Longitude = ' + str(lon))
     #rospy.loginfo(data)
 
 def listener():

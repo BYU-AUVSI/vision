@@ -11,6 +11,7 @@ import rospy
 import cv2
 import numpy as np
 import sys
+import tf
 from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import String
 from click_to_geolocate.msg import FloatList
@@ -145,6 +146,9 @@ class listen_and_locate:
         self.pixPt = []
         self.refPt = FloatList()
 
+        self.br_1 = tf.TransformBroadcaster()
+
+
     def image_cb(self, data):
         try:
             self.cv_image = self.bridge.imgmsg_to_cv2(data.image, "bgr8")
@@ -188,6 +192,18 @@ class listen_and_locate:
             self.refPt.data = self.camera.getNED(self.pixPt,image_size,R_b_i)
 
             self.pub.publish(self.refPt)
+            refPt = self.refPt
+            '''
+
+            put something here that averages all the points in a target
+            stuff above should execute in a loop
+            '''
+            self.br_1.sendTransform((refPt.data[0],refPt.data[1],refPt.data[2]),
+                                    tf.transformations.quaternion_from_euler(0,0,0),
+                                    rospy.Time.now(),
+                                    "target_1",
+                                    "base")
+
 
 def main(args):
     rospy.init_node('locator', anonymous=True)
