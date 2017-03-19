@@ -138,12 +138,13 @@ class listen_and_locate:
 
     def __init__(self,gimbal_pos,v):
         self.image_sub = rospy.Subscriber('/image_stamped',stampedImage,self.image_cb)
-        self.pub = rospy.Publisher('pixel_data', FloatList, queue_size=10)
+        self.pub = rospy.Publisher('spotter_data', FloatList, queue_size=10)
         self.bridge = CvBridge()
         self.camera = camClick(gimbal_pos,v)
 
         self.pixPt = []
         self.refPt = FloatList()
+        self.target_counter = 1.0
 
     def image_cb(self, data):
         try:
@@ -163,13 +164,14 @@ class listen_and_locate:
         cv2.waitKey(1)
 
     '''
-    mouse click callback. uses self.camera to publish an NED coordinate
-    requires stampedImages to be subscribed to
+    mouse click callback. if left mouse button, uses self.camera to publish
+    an NED coordinate requires stampedImages to be subscribed to. if right
+    mouse button, increments target counter
     '''
     def click_and_pub_pixel_data(self, event, x, y, flags, param):
+        N_targets  = 1.0 #CHANGE THIS TO CORRECT NUMBER OF TARGETS (must be float)
         if event == cv2.EVENT_LBUTTONDOWN:
             self.pixPt = [x,y]
-            print(self.pixPt)
 
             #still annoyingly necessary
             phi = self.camera.phi
@@ -185,20 +187,18 @@ class listen_and_locate:
             size = self.cv_image.shape
             image_size = [size[0],size[1]]
 
-            self.refPt.data = self.camera.getNED(self.pixPt,image_size,R_b_i)
+            refPt = self.camera.getNED(self.pixPt,image_size,R_b_i)
+            refPt.append(self.target_counter)
+            self.refPt.data = refPt
 
             self.pub.publish(self.refPt)
-            refPt = self.refPt
-            '''
 
-            put something here that averages all the points in a target
-            stuff above should execute in a loop
-            '''
-            self.br_1.sendTransform((refPt.data[0],refPt.data[1],refPt.data[2]),
-                                    tf.transformations.quaternion_from_euler(0,0,0),
-                                    rospy.Time.now(),
-                                    "target_1",
-                                    "base")
+            print(self.target_counter)
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            self.target_counter += 1.0
+            if self.target_counter == N_targets+1.0: #assumes 9 targets
+                self.target_counter = 1.0
+            print(self.target_counter)
 
 
 def main(args):
@@ -206,7 +206,7 @@ def main(args):
 
     #parameters for camera (eventually will be obtained on initialization)
     gimbal_pos = [0.5,0,0.1]
-    v = [45.0,45.0]
+    v = [120.0,87.0]
 
     listen = listen_and_locate(gimbal_pos,v)
     try:
