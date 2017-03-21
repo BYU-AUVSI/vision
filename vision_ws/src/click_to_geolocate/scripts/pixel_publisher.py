@@ -128,6 +128,7 @@ class camClick:
         p_obj_w = position + R_b_i.dot(self.MAV_to_gimbal) + h*big_term_w/den_w
         p_obj_h = position + R_b_i.dot(self.MAV_to_gimbal) + h*big_term_h/den_h
         p_obj = [float(p_obj_h[0]),float(p_obj_w[1]),float(p_obj_w[2])]
+        rospy.logwarn(p_obj)
 
         return p_obj
 
@@ -169,7 +170,7 @@ class listen_and_locate:
     mouse button, increments target counter
     '''
     def click_and_pub_pixel_data(self, event, x, y, flags, param):
-        N_targets  = 1.0 #CHANGE THIS TO CORRECT NUMBER OF TARGETS (must be float)
+        N_targets  = 9.0 #CHANGE THIS TO CORRECT NUMBER OF TARGETS (must be float)
         if event == cv2.EVENT_LBUTTONDOWN:
             self.pixPt = [x,y]
 
@@ -193,13 +194,11 @@ class listen_and_locate:
 
             self.pub.publish(self.refPt)
 
-            print(self.target_counter)
         elif event == cv2.EVENT_RBUTTONDOWN:
+
             self.target_counter += 1.0
             if self.target_counter == N_targets+1.0: #assumes 9 targets
                 self.target_counter = 1.0
-            print(self.target_counter)
-
 
 def main(args):
     rospy.init_node('locator', anonymous=True)
@@ -207,6 +206,7 @@ def main(args):
     #parameters for camera (eventually will be obtained on initialization)
     gimbal_pos = [0.5,0,0.1]
     v = [120.0,87.0]
+    # v = [45.0,45.0]
 
     listen = listen_and_locate(gimbal_pos,v)
     try:

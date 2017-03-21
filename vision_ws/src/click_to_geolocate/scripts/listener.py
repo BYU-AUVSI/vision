@@ -27,13 +27,14 @@ class location_listener:
         pn = data.data[0]
         pe = data.data[1]
         i = int(data.data[3]) - 1
+        print(i)
 
         tot = (self.target_counter[i]*self.locations[i] + data.data[0:3]) / (self.target_counter[i]+1)
         self.target_counter[i] += 1
         self.locations[i] = tot
 
-        print('location: ' + str(data.data[0:3]))
-        print(self.locations)
+        # print('location: ' + str(data.data[0:3]))
+        # print(self.locations)
 
         msg = FloatList()
         msg.data = self.locations[i]

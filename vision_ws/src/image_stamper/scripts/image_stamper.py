@@ -10,9 +10,16 @@ import tf
 
 class imageStamper:
     def __init__(self,args):
-        self.imageSub = rospy.Subscriber(args[1],Image,self.callback)
-        self.iSPub = rospy.Publisher(args[2],stampedImage,queue_size=1)
+        input_topic = rospy.get_param('~spotter_image')
+        output_topic = rospy.get_param('~spotter_stamp')
+        # self.imageSub = rospy.Subscriber(args[1],Image,self.callback)
+        self.imageSub = rospy.Subscriber(input_topic,Image,self.callback)
+        # self.iSPub = rospy.Publisher(args[2],stampedImage,queue_size=1)
+        self.iSPub = rospy.Publisher(output_topic,stampedImage,queue_size=1)
         self.listener = tf.TransformListener()
+
+        self.base_frame = rospy.get_param('~base_frame')
+        self.MAV_frame = rospy.get_param('~UAS_frame')
 
         #when we have something publishing states, will need subscribers for that
         self.SI = stampedImage()
@@ -20,11 +27,13 @@ class imageStamper:
     def callback(self,data):
 
         image_time = data.header.stamp
-        
+
         try:
             now = image_time
-            self.listener.waitForTransform("/turtle1", "/turtle2", now, rospy.Duration(1.0))
-            (trans, rot) = self.listener.lookupTransform("/turtle1", "/turtle2", now)
+            # self.listener.waitForTransform("/turtle1", "/turtle2", now, rospy.Duration(1.0))
+            # (trans, rot) = self.listener.lookupTransform("/turtle1", "/turtle2", now)
+            self.listener.waitForTransform(self.base_frame, self.MAV_frame, now, rospy.Duration(1.0))
+            (trans, rot) = self.listener.lookupTransform(self.base_frame, self.MAV_frame, now)
         except (tf.Exception, tf.LookupException, tf.ConnectivityException):
             print('e')
 
