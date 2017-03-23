@@ -37,24 +37,28 @@ def click_and_pub_pixel_data(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
         refPt = FloatList()
 
-        src = np.array([[[x, y]]], dtype = np.float64)  #src is input pixel coordinates
+        #Only publish the pixel if it's in the rectangle
+        if 80 <= x <= 560 and 80 <= y <= 400:
+            src = np.array([[[x, y]]], dtype = np.float64)  #src is input pixel coordinates
 
-        #undistortPoints() returns a 3D array of the projection of the pixel, to the image sensor
-        undistortedPixel = cv2.undistortPoints(src,camMatrix,distCoeff)
+            #undistortPoints() returns a 3D array of the projection of the pixel, to the image sensor
+            undistortedPixel = cv2.undistortPoints(src,camMatrix,distCoeff)
 
-        #multiply the projection by the focal length and then add the offset to convert back to pixels
-        undistortedPixel1 = undistortedPixel[0][0][0]*fx + ox
-        undistortedPixel2 = undistortedPixel[0][0][1]*fy + oy
+            #multiply the projection by the focal length and then add the offset to convert back to pixels
+            undistortedPixel1 = undistortedPixel[0][0][0]*fx + ox
+            undistortedPixel2 = undistortedPixel[0][0][1]*fy + oy
 
-        #the new undistorted pixel values
-        x_new = undistortedPixel1
-        y_new = undistortedPixel2
+            #the new undistorted pixel values
+            x_new = undistortedPixel1
+            y_new = undistortedPixel2
 
-        #populate the refPt
-        refPt.data = [x_new,y_new]
+            #populate the refPt
+            refPt.data = [x_new,y_new]
 
-        #rospy.loginfo(refPt)
-        pub.publish(refPt)
+            #rospy.loginfo(refPt)
+            pub.publish(refPt)
+        else:
+            pass
 
 #setup an OpenCV window and set mouse Callback
 cv2.namedWindow('spotter_cam')
@@ -70,6 +74,8 @@ def talker():
     rate = rospy.Rate(30) #approximate "frame rate"
     while not rospy.is_shutdown():
         ret, frame = cap.read()
+        # draw a 'click in this region only' rectangele on the frame
+        cv2.rectangle(frame, (80,80), (560,400), (0,0,255), 2)
         cv2.imshow('spotter_cam', frame)
         cv2.waitKey(1)
         rate.sleep()
