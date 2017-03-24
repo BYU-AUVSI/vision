@@ -18,12 +18,12 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 def image_capture():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     bridge = CvBridge()
     #publish to topic 'sniper_image'
-    pub = rospy.Publisher('sniper_image', Image, queue_size=10)
+    pub = rospy.Publisher('sniper_image', Image, queue_size=1)
     rospy.init_node('sniper_image_publisher', anonymous=True)
-    rate=rospy.Rate(15)
+    rate=rospy.Rate(2)
     while not rospy.is_shutdown():
         grabbed, frame = cap.read()
         try:

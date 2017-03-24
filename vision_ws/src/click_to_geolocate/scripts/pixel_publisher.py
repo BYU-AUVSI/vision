@@ -147,6 +147,26 @@ class listen_and_locate:
         self.refPt = FloatList()
         self.target_counter = 1.0
 
+        #camera calibration parameters (this calibration could be re-done to be more accurate)
+        #intrinsic parameters
+        self.fx = 474.788647 #x focal length in pixels
+        self.ox = 311.008804 #x coordinate of optical center in pixels
+        self.fy = 467.476429 #y focal length in pixels
+        self.oy = 212.330799 #y coordinate of optical center in pixels
+
+        #distortion coefficients
+        self.k1 = -4.67962e-01
+        self.k2 = 2.92767e-01
+        self.p1 = 1.810e-03
+        self.p2 = 1.383e-03
+        self.k3 = -1.19120e-01
+
+        self.camMatrix = np.array([[fx, 0.0, ox],
+                      [0.0, fy, oy],
+                      [0.0, 0.0, 1.0]], dtype = np.float64)
+
+        self.distCoeff = np.array([k1, k2, p1, p2, k3], dtype = np.float64)
+
     def image_cb(self, data):
         try:
             self.cv_image = self.bridge.imgmsg_to_cv2(data.image, "bgr8")
@@ -161,7 +181,9 @@ class listen_and_locate:
         #creates a named window for our camera, waits for mouse click
         cv2.namedWindow('spotter_cam')
         cv2.setMouseCallback('spotter_cam', self.click_and_pub_pixel_data)
+        cv2.rectangle(self.cv_image, (80,80), (560,400), (0,0,255), 2)
         cv2.imshow('spotter_cam',self.cv_image)
+
         cv2.waitKey(1)
 
     '''
@@ -172,27 +194,45 @@ class listen_and_locate:
     def click_and_pub_pixel_data(self, event, x, y, flags, param):
         N_targets  = 9.0 #CHANGE THIS TO CORRECT NUMBER OF TARGETS (must be float)
         if event == cv2.EVENT_LBUTTONDOWN:
-            self.pixPt = [x,y]
 
-            #still annoyingly necessary
-            phi = self.camera.phi
-            theta = self.camera.theta
-            psi = self.camera.psi
+            if 80 <= x <= 560 and 80 <= y <= 400:
+                src = np.array([[[x, y]]], dtype = np.float64)  #src is input pixel coordinates
 
-            R_b_i = np.array([[np.cos(theta)*np.cos(psi),np.cos(theta)*np.sin(psi),-np.sin(theta)], \
-                                   [np.sin(phi)*np.sin(theta)*np.cos(psi)-np.cos(phi)*np.sin(psi),np.sin(phi)*np.sin(theta)*np.sin(psi) \
-                                    +np.cos(phi)*np.cos(psi),np.sin(phi)*np.cos(theta)],[np.cos(phi)*np.sin(theta)*np.cos(psi) \
-                                    +np.sin(phi)*np.sin(psi),np.cos(phi)*np.sin(theta)*np.sin(psi) \
-                                    -np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]]).T
+                #undistortPoints() returns a 3D array of the projection of the pixel, to the image sensor
+                undistortedPixel = cv2.undistortPoints(src,self.camMatrix,self.distCoeff)
 
-            size = self.cv_image.shape
-            image_size = [size[0],size[1]]
+                #multiply the projection by the focal length and then add the offset to convert back to pixels
+                undistortedPixel1 = undistortedPixel[0][0][0]*self.fx + self.ox
+                undistortedPixel2 = undistortedPixel[0][0][1]*self.fy + self.oy
 
-            refPt = self.camera.getNED(self.pixPt,image_size,R_b_i)
-            refPt.append(self.target_counter)
-            self.refPt.data = refPt
+                #the new undistorted pixel values
+                x_new = undistortedPixel1
+                y_new = undistortedPixel2
 
-            self.pub.publish(self.refPt)
+                self.pixPt = [x_new,y_new]
+
+                #still annoyingly necessary
+                phi = self.camera.phi
+                theta = self.camera.theta
+                psi = self.camera.psi
+
+                R_b_i = np.array([[np.cos(theta)*np.cos(psi),np.cos(theta)*np.sin(psi),-np.sin(theta)], \
+                                       [np.sin(phi)*np.sin(theta)*np.cos(psi)-np.cos(phi)*np.sin(psi),np.sin(phi)*np.sin(theta)*np.sin(psi) \
+                                        +np.cos(phi)*np.cos(psi),np.sin(phi)*np.cos(theta)],[np.cos(phi)*np.sin(theta)*np.cos(psi) \
+                                        +np.sin(phi)*np.sin(psi),np.cos(phi)*np.sin(theta)*np.sin(psi) \
+                                        -np.sin(phi)*np.cos(psi), np.cos(phi)*np.cos(theta)]]).T
+
+                size = self.cv_image.shape
+                image_size = [size[0],size[1]]
+
+                refPt = self.camera.getNED(self.pixPt,image_size,R_b_i)
+                refPt.append(self.target_counter)
+                self.refPt.data = refPt
+
+                self.pub.publish(self.refPt)
+
+            else:
+                pass
 
         elif event == cv2.EVENT_RBUTTONDOWN:
 

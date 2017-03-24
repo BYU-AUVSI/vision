@@ -59,6 +59,7 @@ def listener():
 
     l = location_listener()
 
+
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
