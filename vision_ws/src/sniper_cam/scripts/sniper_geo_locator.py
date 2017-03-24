@@ -22,6 +22,11 @@ import cv2
 import math
 import numpy as np
 
+import time
+from time import strftime, localtime
+from datetime import datetime
+
+
 
 
 class SniperGeoLocator(object):
@@ -34,7 +39,7 @@ class SniperGeoLocator(object):
         cv2.namedWindow('sniper cam image')
         cv2.setMouseCallback('sniper cam image', self.click_and_locate)
 
-        # initialize variables
+        # initialize state variables
         self.pn = 0
         self.pe = 0
         self.pd = 0
@@ -46,11 +51,21 @@ class SniperGeoLocator(object):
         self.alpha_az = 0
         self.alpha_el = 0
 
-        # image parameters
+        # initialize image parameters
         self.img_width = 0
         self.img_height = 0
         self.fov_w = 60
         self.fov_h = 45
+
+        # initialize target number
+        self.target_number = 0
+
+        self.status = "Standby..."
+        self.time_str = "_"
+
+        #initialize current image
+        shape = 576, 1024, 3
+        self.img_current = np.zeros(shape, np.uint8)
 
 
     def image_callback(self, msg):
@@ -70,12 +85,21 @@ class SniperGeoLocator(object):
         np_arr = np.fromstring(msg.data, np.uint8)
         img_np = cv2.imdecode(np_arr, 1)
 
+        self.img_current = img_np
+
         # get the width and height of the image
         height, width, channels = img_np.shape
         self.img_width = width
         self.img_height = height
 
+
+        # get the time
+        self.get_current_time()
+
         # display the image
+        cv2.rectangle(img_np,(0,0),(200,30),(0,0,0),-1)
+        cv2.putText(img_np,"Status: " + self.status,(5,20),cv2.FONT_HERSHEY_PLAIN,1,(0,255,0))
+        cv2.putText(img_np,self.time_str,(5,40),cv2.FONT_HERSHEY_PLAIN,1,(0,255,0))
         cv2.imshow('sniper cam image', img_np)
         # wait about a second
         cv2.waitKey(999)
@@ -83,8 +107,18 @@ class SniperGeoLocator(object):
 
     def click_and_locate(self, event, x, y, flags, param):
         # if user clicks on target in the image frame
-        if event == cv2.EVENT_LBUTTONDOWN:
+        if event == cv2.EVENT_LBUTTONDOWN and self.target_number > 0:
             self.chapter_13_geolocation(x,y)
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            self.target_number += 1
+            self.status = "Target " + str(self.target_number)
+        elif event == cv2.EVENT_MBUTTONDOWN and self.target_number > 0:
+            if self.target_number == 1:
+                self.target_number = 0
+                self.status = "Standby..."
+            else:
+                self.target_number -= 1
+                self.status = "Target " + str(self.target_number)
         else:
             pass
 
@@ -150,8 +184,12 @@ class SniperGeoLocator(object):
         print eps_x, eps_y
 
 
-
-
+    def get_current_time(self):
+        dt = datetime.now()
+        m_time = dt.microsecond
+        m_time = str(m_time)[:3]
+        time_now = strftime("%m%d%y-%H:%M:%S:" + m_time, localtime())
+        self.time_str = str(time_now)
 
 
 
