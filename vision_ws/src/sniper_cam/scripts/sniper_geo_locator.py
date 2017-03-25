@@ -63,9 +63,12 @@ class SniperGeoLocator(object):
         self.status = "Standby..."
         self.time_str = "_"
 
-        #initialize current image
+        # initialize current image
         shape = 576, 1024, 3
         self.img_current = np.zeros(shape, np.uint8)
+
+        # set vision_files directory
+        self.vision_directory = "/home/jesse/Desktop/vision_files/target_images/"
 
 
     def image_callback(self, msg):
@@ -186,7 +189,7 @@ class SniperGeoLocator(object):
         print eps_x, eps_y
 
         # save the image
-        cv2.imwrite("/home/jesse/Desktop/vision_files/target_images/target_" + str(self.target_number) + "/" + self.time_str + ".jpg", self.img_current)
+        self.write_image_to_file()
 
 
     def get_current_time(self):
@@ -197,7 +200,14 @@ class SniperGeoLocator(object):
         self.time_str = str(time_now)
 
 
+    def write_image_to_file(self):
+        target_folder = "target_" + str(self.target_number) + "/"
+        filename = self.time_str + ".jpg"
+        cv2.imwrite(self.vision_directory + target_folder + filename, self.img_current)
 
+
+    def write_location_to_file(self):
+        pass
 
 def main():
     #initialize the node
