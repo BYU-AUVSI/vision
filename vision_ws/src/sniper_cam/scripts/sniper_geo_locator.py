@@ -63,9 +63,12 @@ class SniperGeoLocator(object):
         self.status = "Standby..."
         self.time_str = "_"
 
-        #initialize current image
+        # initialize current image
         shape = 576, 1024, 3
         self.img_current = np.zeros(shape, np.uint8)
+
+        # set vision_files directory
+        self.vision_directory = "/home/jesse/Desktop/vision_files/target_images/"
 
 
     def image_callback(self, msg):
@@ -84,20 +87,20 @@ class SniperGeoLocator(object):
         # direct conversion to CV2 of the image portion of the message
         np_arr = np.fromstring(msg.data, np.uint8)
         img_np = cv2.imdecode(np_arr, 1)
-
-        self.img_current = img_np
+        self.img_current = cv2.imdecode(np_arr, 1)
+        # make a copy of img_np for saving and accessing elsewhere in the class
+        #self.img_current = img_np
 
         # get the width and height of the image
         height, width, channels = img_np.shape
         self.img_width = width
         self.img_height = height
 
-
         # get the time
         self.get_current_time()
 
         # display the image
-        cv2.rectangle(img_np,(0,0),(200,30),(0,0,0),-1)
+        cv2.rectangle(img_np,(0,0),(200,45),(0,0,0),-1)
         cv2.putText(img_np,"Status: " + self.status,(5,20),cv2.FONT_HERSHEY_PLAIN,1,(0,255,0))
         cv2.putText(img_np,self.time_str,(5,40),cv2.FONT_HERSHEY_PLAIN,1,(0,255,0))
         cv2.imshow('sniper cam image', img_np)
@@ -109,9 +112,11 @@ class SniperGeoLocator(object):
         # if user clicks on target in the image frame
         if event == cv2.EVENT_LBUTTONDOWN and self.target_number > 0:
             self.chapter_13_geolocation(x,y)
+
         elif event == cv2.EVENT_RBUTTONDOWN:
             self.target_number += 1
             self.status = "Target " + str(self.target_number)
+
         elif event == cv2.EVENT_MBUTTONDOWN and self.target_number > 0:
             if self.target_number == 1:
                 self.target_number = 0
@@ -175,13 +180,16 @@ class SniperGeoLocator(object):
         big_term_h = R_b_i.dot(R_g_b.dot(R_c_g.dot(el_hat_c_h)))
         den_h = np.dot(k_i.T,big_term_h)
 
-        #calculate the location of the target
+        # calculate the location of the target
         p_obj_w = p_uav + h*big_term_w/den_w                        #EQ 13.18
         p_obj_h = p_uav + h*big_term_h/den_h
         p_obj = [float(p_obj_h[0]),float(p_obj_w[1]),float(p_obj_w[2])]
 
         print p_obj
         print eps_x, eps_y
+
+        # save the image
+        self.write_image_to_file()
 
 
     def get_current_time(self):
@@ -192,7 +200,14 @@ class SniperGeoLocator(object):
         self.time_str = str(time_now)
 
 
+    def write_image_to_file(self):
+        target_folder = "target_" + str(self.target_number) + "/"
+        filename = self.time_str + ".jpg"
+        cv2.imwrite(self.vision_directory + target_folder + filename, self.img_current)
 
+
+    def write_location_to_file(self):
+        pass
 
 def main():
     #initialize the node
