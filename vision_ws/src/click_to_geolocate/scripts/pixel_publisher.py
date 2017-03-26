@@ -161,11 +161,11 @@ class listen_and_locate:
         self.p2 = 1.383e-03
         self.k3 = -1.19120e-01
 
-        self.camMatrix = np.array([[fx, 0.0, ox],
-                      [0.0, fy, oy],
+        self.camMatrix = np.array([[self.fx, 0.0, self.ox],
+                      [0.0, self.fy, self.oy],
                       [0.0, 0.0, 1.0]], dtype = np.float64)
 
-        self.distCoeff = np.array([k1, k2, p1, p2, k3], dtype = np.float64)
+        self.distCoeff = np.array([self.k1, self.k2, self.p1, self.p2, self.k3], dtype = np.float64)
 
     def image_cb(self, data):
         try:
