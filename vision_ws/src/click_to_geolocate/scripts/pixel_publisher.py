@@ -182,6 +182,7 @@ class listen_and_locate:
         cv2.namedWindow('spotter_cam')
         cv2.setMouseCallback('spotter_cam', self.click_and_pub_pixel_data)
         cv2.rectangle(self.cv_image, (80,80), (560,400), (0,0,255), 2)
+        cv2.putText(self.cv_image,"Target: " + str(int(self.target_counter)),(5,20),cv2.FONT_HERSHEY_PLAIN,1,(0,0,255))
         cv2.imshow('spotter_cam',self.cv_image)
 
         cv2.waitKey(1)
@@ -239,6 +240,14 @@ class listen_and_locate:
             self.target_counter += 1.0
             if self.target_counter == N_targets+1.0: #assumes 9 targets
                 self.target_counter = 1.0
+
+        elif event == cv2.EVENT_MBUTTONDOWN:
+            self.target_counter -= 1.0
+            if self.target_counter == 0.0:
+                self.target_counter = N_targets
+
+        else:
+            pass
 
 def main(args):
     rospy.init_node('locator', anonymous=True)
