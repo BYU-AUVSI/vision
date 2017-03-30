@@ -20,6 +20,7 @@ from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import math
+import csv
 import numpy as np
 
 import time
@@ -68,7 +69,9 @@ class SniperGeoLocator(object):
         self.img_current = np.zeros(shape, np.uint8)
 
         # set vision_files directory
-        self.vision_directory = "/home/jesse/Desktop/vision_files/target_images/"
+        self.image_directory = "/home/jesse/Desktop/vision_files/target_images/"
+
+        self.txt_directory = "/home/jesse/Desktop/vision_files/target_locations/"
 
 
     def image_callback(self, msg):
@@ -188,8 +191,11 @@ class SniperGeoLocator(object):
         print p_obj
         print eps_x, eps_y
 
-        # save the image
+        # write the image to file
         self.write_image_to_file()
+
+        # write the location data to file
+        self.write_location_to_file(p_obj)
 
 
     def get_current_time(self):
@@ -203,11 +209,19 @@ class SniperGeoLocator(object):
     def write_image_to_file(self):
         target_folder = "target_" + str(self.target_number) + "/"
         filename = self.time_str + ".jpg"
-        cv2.imwrite(self.vision_directory + target_folder + filename, self.img_current)
+        cv2.imwrite(self.image_directory + target_folder + filename, self.img_current)
 
 
-    def write_location_to_file(self):
-        pass
+    def write_location_to_file(self, location):
+        filename = "target_" + str(self.target_number) + "_locations.txt"
+        f = open(self.txt_directory + filename, 'a')
+        try:
+            f.write(self.time_str + "," + str(self.target_number) + "," +
+                    str(location[0]) + "," + str(location[1]) + "," + str(math.degrees(self.psi)))
+            f.write("\n")
+        finally:
+            f.close()
+
 
 def main():
     #initialize the node
