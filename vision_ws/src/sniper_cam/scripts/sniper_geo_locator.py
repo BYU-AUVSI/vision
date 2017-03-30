@@ -3,15 +3,15 @@
 ## Simple ROS node that:
 ## -subscribes to stamped_image topic   -needs to be done as of (3/20/17)
 ## -displays the image portion of the message
-## -writes image to 'backup' file   -needs to be done as of (3/20/17)
 ## -if user clicks target in image:
 ##  -capture x,y pixel coord
 ##  -calculate target NED location
-##  -wirte image to sorted file *1  -needs to be done as of (3/20/17)
-##  -write NED location and heading to file *2  -needs to be done as of (3/20/17)
-## -pressing number key (1,2,...,9) changes the target number
+##  -wirte image to sorted file *1
+##  -write NED location and heading to file *2
+## -right click in image window increments target number changes the target number
+## -middle click decrements target number
 
-## Geolocation Method Based on Chapter 13 of Small Unmanned Aircraft Theory and Practice by Beard and McLain
+## Geolocation Method Based on Chapter 13 of Small Unmanned Aircraft Theory and Practice by R. Beard and T. McLain
 ## Peter Schleede AUVSI '17
 ## Jesse Wynn AUVSI '17
 
@@ -20,7 +20,6 @@ from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 import math
-import csv
 import numpy as np
 
 import time
@@ -41,22 +40,22 @@ class SniperGeoLocator(object):
         cv2.setMouseCallback('sniper cam image', self.click_and_locate)
 
         # initialize state variables
-        self.pn = 0
-        self.pe = 0
-        self.pd = 0
+        self.pn = 0.0
+        self.pe = 0.0
+        self.pd = 0.0
 
-        self.phi = 0
-        self.theta = 0
-        self.psi = 0
+        self.phi = 0.0
+        self.theta = 0.0
+        self.psi = 0.0
 
-        self.alpha_az = 0
-        self.alpha_el = 0
+        self.alpha_az = 0.0
+        self.alpha_el = 0.0
 
         # initialize image parameters
-        self.img_width = 0
-        self.img_height = 0
-        self.fov_w = 60
-        self.fov_h = 45
+        self.img_width = 0.0
+        self.img_height = 0.0
+        self.fov_w = 60.0
+        self.fov_h = 45.0
 
         # initialize target number
         self.target_number = 0
@@ -76,15 +75,15 @@ class SniperGeoLocator(object):
 
     def image_callback(self, msg):
         # pull off the state info from the message
-        self.pn = 0
-        self.pe = 0
-        self.pd = -100
+        self.pn = 0.0
+        self.pe = 0.0
+        self.pd = -100.0
 
         self.phi = math.radians(22.5)   #22.5
-        self.theta = math.radians(0)
-        self.psi = math.radians(0)
+        self.theta = math.radians(0.0)
+        self.psi = math.radians(0.0)
 
-        self.alpha_az = math.radians(90)    #90
+        self.alpha_az = math.radians(90.0)    #90
         self.alpha_el = math.radians(-22.5) #-22.5
 
         # direct conversion to CV2 of the image portion of the message
