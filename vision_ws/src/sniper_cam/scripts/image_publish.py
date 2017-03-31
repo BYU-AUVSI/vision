@@ -32,24 +32,31 @@ def image_transfer():
 	rospy.init_node('death_star', anonymous=True)
 	rate = rospy.Rate(1)					#One image/sec
 
+#	with open('Path/to/file', 'r') as content_file:
+#	    content = content_file.read()
 
-#	f1 = open("Read In/image.jpg")				
-	f2 = open("Read In/lat.txt")				
-	f3 = open("Read In/longi.txt")				
-	f4 = open("Read In/target_color.txt")			
-	f5 = open("Read In/target_shape.txt")			
-	f6 = open("Read In/symbol.txt")				#Shape File
-	f7 = open("Read In/symbol_color.txt")			#Shape Color File
-	f8 = open("Read In/orientation.txt")			
+#	with open('Read In/target_color.txt', 'r') as f:
+#   	    for line in f:
+#	        target_color = line.split()
+        	
 
-#	image = f1.read			#Image file
-	lat = f2.readline()				#Lat file
-	longi = f3.readline()				#Longi File
-	target_color = f4.readline()			#Color File
-	target_shape = f5.readline()			#Shape File
-	symbol = f6.readline()
-	symbol_color = f7.readline()
-	orientation = f8.readline()			#Orientation file
+##	f1 = open("Read In/image.jpg")				
+	file = open("Read In/lat.txt")				
+#	f3 = open("Read In/longi.txt")				
+#	f4 = open("Read In/target_color.txt")			
+#	f5 = open("Read In/target_shape.txt")			
+#	f6 = open("Read In/symbol.txt")				
+#	f7 = open("Read In/symbol_color.txt")			
+#	f8 = open("Read In/orientation.txt")			
+
+##	image = f1.read					
+	lat = file.readline()				
+	longi = file.readline()				
+	target_color = file.readline()			
+	target_shape = file.readline()			
+	symbol = file.readline()
+	symbol_color = file.readline()
+	orientation = file.readline()			
 
 	image = cv2.imread("Read In/image.jpg")
 	try:
