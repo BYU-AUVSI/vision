@@ -2,7 +2,7 @@
 
 import rospy
 import numpy as np
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import CompressedImage
 import time
 from uav_msgs.msg import stampedImage
 import sys
@@ -13,7 +13,7 @@ class imageStamper:
         input_topic = rospy.get_param('~spotter_image')
         output_topic = rospy.get_param('~spotter_stamp')
         # self.imageSub = rospy.Subscriber(args[1],Image,self.callback)
-        self.imageSub = rospy.Subscriber(input_topic,Image,self.callback)
+        self.imageSub = rospy.Subscriber(input_topic,CompressedImage,self.callback)
         # self.iSPub = rospy.Publisher(args[2],stampedImage,queue_size=1)
         self.iSPub = rospy.Publisher(output_topic,stampedImage,queue_size=1)
         self.listener = tf.TransformListener()
@@ -53,7 +53,7 @@ class imageStamper:
         self.SI.psi = psi
         self.SI.alpha_az = alpha_az
         self.SI.alpha_el = alpha_el
-        self.SI.image = data
+        self.SI.im = data
 
         self.iSPub.publish(self.SI)
 
