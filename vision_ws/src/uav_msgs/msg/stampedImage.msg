@@ -7,4 +7,5 @@ float32 psi
 float32 alpha_az
 float32 alpha_el
 
-sensor_msgs/Image image
+#sensor_msgs/Image image
+sensor_msgs/CompressedImage im

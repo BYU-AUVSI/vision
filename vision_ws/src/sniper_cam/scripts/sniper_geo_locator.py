@@ -11,7 +11,7 @@
 ## -right click in image window increments target number changes the target number
 ## -middle click decrements target number
 
-## Geolocation Method Based on Chapter 13 of Small Unmanned Aircraft Theory and Practice by R. Beard and T. McLain
+## Geolocation Method Based on Chapter 13 of Small Unmanned Aircraft Theory and Practice by R. Beard and McLain
 ## Peter Schleede AUVSI '17
 ## Jesse Wynn AUVSI '17
 
