@@ -16,8 +16,6 @@ import roslib
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from sniper_cam.msg import interopImages
-import ipdb
-
 
 from cv_bridge import CvBridge, CvBridgeError	
        
@@ -413,7 +411,7 @@ class Application(Frame):
         if self.image:
             self.image_tk=None
 
-	print(self.targetDir)
+	#print(self.targetDir)
         # sample the directory for images
         try:
             files = os.listdir(self.targetDir)
@@ -442,7 +440,7 @@ class Application(Frame):
             locations_files = os.listdir(self.paramDir)
         except OSError:
             return
-	print(locations_files)
+	#print(locations_files)
         self.averagePositionVals()
         # divide the images into equal sizes
         self.columns = ceil(sqrt(len(self.images)))
