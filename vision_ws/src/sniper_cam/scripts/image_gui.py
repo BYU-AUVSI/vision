@@ -114,7 +114,7 @@ class Application(Frame):
             heading += 360
 
 	#add target type
-
+	self.msg.image = image_msg
 	self.msg.gps_lati = float(self.vals[0])
 	self.msg.gps_longit = float(self.vals[1])
 	self.msg.target_color = self.tColorContent.get()
