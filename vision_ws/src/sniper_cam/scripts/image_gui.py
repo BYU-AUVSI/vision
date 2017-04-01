@@ -397,8 +397,8 @@ class Application(Frame):
         for line in values:
 	    if(line!='\n'):
 		split_vals = line.split(',')
-		self.vals[0] += float(split_vals[0])
-		self.vals[1] += float(split_vals[1])
+		self.vals[0] += float(split_vals[2])
+		self.vals[1] += float(split_vals[3])
 		count += 1
 	    else:
 		break
