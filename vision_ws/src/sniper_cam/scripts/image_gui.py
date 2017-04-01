@@ -393,28 +393,32 @@ class Application(Frame):
         self.loadFiles()
 
     def averagePositionVals(self):
-        self.vals = [0,0,0]
-        for file in self.params:
-            values = open('{}/{}'.format(self.targetDir, file), 'rb')
-            for line in values:
-                split_vals = line.split(',')
-                self.vals[0] += float(split_vals[0])
-                self.vals[1] += float(split_vals[1])
-                self.vals[2] += float(split_vals[2])
+        self.vals = [0,0]
+        values = open('{}/target_{}_locations.txt'.format(self.paramDir, self.targetDir[-1]), 'rb')
+	count = 0
+        for line in values:
+	    if(line!='\n'):
+		split_vals = line.split(',')
+		self.vals[0] += float(split_vals[0])
+		self.vals[1] += float(split_vals[1])
+		count += 1
+	    else:
+		break
 
-        self.vals = list(map(lambda x: x /len(self.params), self.vals))
+        self.vals = list(map(lambda x: x / count, self.vals))
+	self.vals.append(200)
 
 
     def loadFiles(self, event=None):
         if self.image:
             self.image_tk=None
 
+	print(self.targetDir)
         # sample the directory for images
         try:
             files = os.listdir(self.targetDir)
         except OSError:
             return
-
         self.cropButton.configure(state=DISABLED)
         self.undo.configure(state=DISABLED)
         self.rotateScale.configure(state=DISABLED)
@@ -433,7 +437,12 @@ class Application(Frame):
 
         self.images = [x for x in files if '.jpg' in x]
         self.savedImages = []
-        self.params = [x for x in files if '.txt' in x]
+	self.paramDir = os.path.join(os.path.dirname(os.path.dirname(self.targetDir)),'target_locations')
+	try:
+            locations_files = os.listdir(self.paramDir)
+        except OSError:
+            return
+	print(locations_files)
         self.averagePositionVals()
         # divide the images into equal sizes
         self.columns = ceil(sqrt(len(self.images)))
