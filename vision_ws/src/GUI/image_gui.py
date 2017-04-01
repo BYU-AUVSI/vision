@@ -8,7 +8,6 @@ import tkMessageBox
 from PIL import Image, ImageTk
 from functools import partial
 from math import ceil, sqrt
-import ipdb
        
 # extend the tkinter class Frame to adapt to our current application
 class Application(Frame):
