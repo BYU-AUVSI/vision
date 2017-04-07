@@ -103,7 +103,7 @@ class Application(Frame):
 	else:
 		self.imageMessage = self.image
 	try:
-	    image_msg = self.bridge.cv2_to_imgmsg(np.array(self.imageMessage), "bgr8")
+	    image_msg = self.bridge.cv2_to_imgmsg(np.array(self.imageMessage), "rgb8")
 	except CvBridgeError as e:
 	    print(e)
 
