@@ -12,13 +12,13 @@ from PIL import ImageTk
 from functools import partial
 from math import ceil, sqrt
 import rospy
-import roslib					
+import roslib
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from sniper_cam.msg import interopImages
 
-from cv_bridge import CvBridge, CvBridgeError	
-       
+from cv_bridge import CvBridge, CvBridgeError
+
 # extend the tkinter class Frame to adapt to our current application
 class Application(Frame):
     # method that destroys the old frame and loads a new image
@@ -119,13 +119,13 @@ class Application(Frame):
 	self.msg.gps_longit = float(self.vals[1])
 	self.msg.target_color = self.tColorContent.get()
 	self.msg.target_shape = self.tShapeContent.get()
-	self.msg.symbol = self.lColorContent.get()
-	self.msg.symbol_color = self.letterContent.get()
+	self.msg.symbol = self.letterContent.get()
+	self.msg.symbol_color = self.lColorContent.get()
 	self.msg.orientation = str(heading)
 
 	self.pub.publish(self.msg)
 	'''
-        writeFile.write('{}\n,{}\n,{}\n,{}\n,{}\n,{}\n,{}\n,{}'.format(self.targetDir[-1], self.vals[0], self.vals[1], 
+        writeFile.write('{}\n,{}\n,{}\n,{}\n,{}\n,{}\n,{}\n,{}'.format(self.targetDir[-1], self.vals[0], self.vals[1],
                                                             heading, self.tShapeContent.get(), self.letterContent.get(),
                                                             self.tColorContent.get(), self.lColorContent.get()))
 	'''
@@ -143,8 +143,8 @@ class Application(Frame):
         except AttributeError:
             pass
         self.after_cancel(self.job)
-        
-        
+
+
     def sampleRotate(self):
         width, height = self.image.size
         expand = False if height > 650 else True
@@ -188,7 +188,7 @@ class Application(Frame):
             self.canvas.delete(self.rect)
             self.rect=None
     #def drawRectangle(self):
-         
+
 
     def cropImage(self):
         if not self.rect:
@@ -201,7 +201,7 @@ class Application(Frame):
 
         if self.imageType=='Cropped':
             self.toBeCropped = self.croppedImage
-        
+
         if self.imageType=='Rotated':
             rWidth, rHeight = self.rotateImage.size
             if rWidth != width:
@@ -209,7 +209,7 @@ class Application(Frame):
                 offsetY = offsetY - (rHeight - height) / 2
                 self.toBeCropped = self.rotateImage
             else:
-                self.toBeCropped = self.image           
+                self.toBeCropped = self.image
 
         if self.image:
            # print(self.toBeCropped.size)
@@ -328,7 +328,7 @@ class Application(Frame):
         # create the list that tracks how many images have been saved in each target directory
         self.index = []
         # create a radio button for each of the targets
-        
+
         for i in range(1,self.targets+1):
             # add an entry in the image number list
             self.index.append(0)
@@ -340,7 +340,7 @@ class Application(Frame):
             if not os.path.isdir(self.targetdir):
                 # create the directory
                 os.makedirs(self.targetdir)
-        # set the target directory to be one as a default when the GUI starts 
+        # set the target directory to be one as a default when the GUI starts
         self.targetdir = self.targetdir[:-1] + '1'
         """
     def loadImage(self, event):
@@ -349,7 +349,7 @@ class Application(Frame):
 
         filename='{}/{}'.format(self.targetDir,self.images[int(self.red_pos[0]*self.columns+self.red_pos[1])])
         try:
-            self.image = Im.open(filename)     
+            self.image = Im.open(filename)
         except OSError:
             return
         self.canvas.unbind('<Button 1>')
@@ -372,7 +372,7 @@ class Application(Frame):
         self.canvas.bind("<ButtonPress-1>",self.on_button_press)
         self.canvas.bind("<ButtonPress-3>", self.right_click)
         self.canvas.bind("<B1-Motion>", self.on_move_press)
-        self.canvas.bind("<ButtonRelease-1>", self.on_button_release) 
+        self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
         self.image = Im.open(filename)
         self.originalImage = self.image
         width, height = self.image.size
@@ -477,7 +477,7 @@ class Application(Frame):
         else:
             self.red_pos = (self.red_pos[0]-1, self.red_pos[1])
         self.canvas.delete(self.red_rect)
-        self.red_rect = self.canvas.create_rectangle(self.red_pos[1]*(self.column_size), self.red_pos[0]*self.row_size, 
+        self.red_rect = self.canvas.create_rectangle(self.red_pos[1]*(self.column_size), self.red_pos[0]*self.row_size,
                                                      self.red_pos[1]*(self.column_size) + self.column_size, self.red_pos[0]*self.row_size+self.row_size,
                                                      fill='',outline='red')
     def move_down(self, event):
@@ -491,7 +491,7 @@ class Application(Frame):
             else:
                 self.red_pos = (self.red_pos[0]+1, self.red_pos[1])
         self.canvas.delete(self.red_rect)
-        self.red_rect = self.canvas.create_rectangle(self.red_pos[1]*(self.column_size), self.red_pos[0]*self.row_size, 
+        self.red_rect = self.canvas.create_rectangle(self.red_pos[1]*(self.column_size), self.red_pos[0]*self.row_size,
                                                      self.red_pos[1]*(self.column_size) + self.column_size, self.red_pos[0]*self.row_size+self.row_size,
                                                      fill='',outline='red')
 
@@ -500,13 +500,13 @@ class Application(Frame):
             return
         if self.red_pos[1] == 0:
             if((self.red_pos[0]*self.columns+(self.columns-1)) > (len(self.images)-1)):
-                self.red_pos = (self.red_pos[0], (len(self.images) % self.rows)-1) 
+                self.red_pos = (self.red_pos[0], (len(self.images) % self.rows)-1)
             else:
                 self.red_pos = (self.red_pos[0], self.columns-1)
         else:
             self.red_pos = (self.red_pos[0], self.red_pos[1]-1)
         self.canvas.delete(self.red_rect)
-        self.red_rect = self.canvas.create_rectangle(self.red_pos[1]*(self.column_size), self.red_pos[0]*self.row_size, 
+        self.red_rect = self.canvas.create_rectangle(self.red_pos[1]*(self.column_size), self.red_pos[0]*self.row_size,
                                                      self.red_pos[1]*(self.column_size) + self.column_size, self.red_pos[0]*self.row_size+self.row_size,
                                                      fill='',outline='red')
     def move_right(self, event):
@@ -520,10 +520,10 @@ class Application(Frame):
             else:
                 self.red_pos = (self.red_pos[0], self.red_pos[1]+1)
         self.canvas.delete(self.red_rect)
-        self.red_rect = self.canvas.create_rectangle(self.red_pos[1]*(self.column_size), self.red_pos[0]*self.row_size, 
+        self.red_rect = self.canvas.create_rectangle(self.red_pos[1]*(self.column_size), self.red_pos[0]*self.row_size,
                                                      self.red_pos[1]*(self.column_size) + self.column_size, self.red_pos[0]*self.row_size+self.row_size,
                                                      fill='',outline='red')
-    
+
     def move_red_rect(self, event):
         if not self.red_rect:
             return
@@ -533,7 +533,7 @@ class Application(Frame):
             return
         self.red_pos = (row, column)
         self.canvas.delete(self.red_rect)
-        self.red_rect = self.canvas.create_rectangle(self.red_pos[1]*(self.column_size), self.red_pos[0]*self.row_size, 
+        self.red_rect = self.canvas.create_rectangle(self.red_pos[1]*(self.column_size), self.red_pos[0]*self.row_size,
                                                      self.red_pos[1]*(self.column_size) + self.column_size, self.red_pos[0]*self.row_size+self.row_size,
                                                      fill='',outline='red')
 
@@ -551,8 +551,8 @@ class Application(Frame):
         self.rotateImage = None
         self.croppedImage = None
         self.imageType = ''
-	
-	self.pub = rospy.Publisher('plans', interopImages, queue_size =  10) 	
+
+	self.pub = rospy.Publisher('plans', interopImages, queue_size =  10)
 	self.bridge = CvBridge()
 	self.msg = interopImages()
 
@@ -608,4 +608,3 @@ width, height = root.winfo_screenwidth(), root.winfo_screenheight()
 app = Application(master=root)
 app.mainloop()
 root.destroy()
-
