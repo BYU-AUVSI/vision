@@ -21,129 +21,42 @@ from cv_bridge import CvBridge, CvBridgeError
 
 # extend the tkinter class Frame to adapt to our current application
 class Application(Frame):
-    # method that destroys the old frame and loads a new image
-    def loadNextImage(self):
-        # if the autodiscard function job exists
-        #if self.job is not None:
-            # cancel the existing job
-            #self.after_cancel(self.job)
-            # restart the discard function to sync with the two second delay
-            #self.job= self.after(self.delay, self.autoDiscard)
-        # creates the file name of the input image in the image directory
-        if self.rotateImage:
-            self.rotateImage=None
-
-        if self.rect:
-            self.canvas.delete(self.rect)
-            self.rect=None
-
-        try:
-            filename = self.imagedir  + '/' + self.images[self.i]
-            # if there is a valid file then do not display the wait message
-            self.error.grid_forget()
-        except IndexError:
-            # else display a wait for image message on the GUI
-            self.error.grid(row=2,column=1)
-            return
-        # if there have been previous images then destroy it
-        #if self.i > 0:
-            #self.panel.destroy()
-        # open a new image from the image directory
-        self.image = Image.open(filename)
-        self.originalImage = self.image
-        width, height = self.image.size
-        self.w_mult = float(width) / 370
-        self.h_mult = float(height) / 370
-        # resizes the image so that all are the same size
-        self.image = self.image.resize((370, 370))
-        # converts the PIL image to a tk image
-        self.image_tk = ImageTk.PhotoImage(self.image)
-        # create the label with the embedded image
-        self.canvas.create_image(self.master.winfo_screenwidth()/2,(self.master.winfo_screenheight()-200)/2,anchor=CENTER, image=self.image_tk)
-        self.imageType = 'Standard'
-        # increment the image number
-        self.i += 1
-
-    # function that discards the current image and calls load next image on a automatic delay
-    def autoDiscard(self):
-        self.images = os.listdir('images/')
-        self.rotateValue.set(0)
-        if self.image:
-            # save the discarded image in a folder in case we want to go back and review them
-            self.image.save(self.discarddir + '/image_' + str(self.i) +'.jpg')
-        self.job= self.after(self.delay, self.autoDiscard)
-        # grab the next image
-        self.loadNextImage()
-
-    # save the image to a specific target directory
-    def saveImage(self, discard=False):
-        self.pauseDiscard()
-        self.rotateValue.set(0)
-        # if the image exists
-        if self.image:
-                # if we are manually discarding the image from a button click
-            if discard:
-                self.image.save(self.discarddir + '/image_' + str(self.i) + '.jpg')
-            # we are saving the image from a button click
-            else:
-                # grab the correct target directory based on the radio button selected
-                index = self.index[int(self.targetdir[-1])-1]
-                # save the image to that location
-                self.image.save(self.targetdir + '/image_' + str(index) + '.jpg')
-                # increment the image number in the index list (each entry corresponds to a different target directory)
-                self.index[int(self.targetdir[-1])-1] = index + 1
-            # grab the next image
-            self.loadNextImage()
-
+    
     def submitInfo(self):
-	if self.imageType == 'Rotated':
-		self.imageMessage = self.rotateImage
-	elif self.imageType == 'Cropped':
-		self.imageMessage = self.croppedImage
-	else:
-		self.imageMessage = self.image
-	try:
-	    image_msg = self.bridge.cv2_to_imgmsg(np.array(self.imageMessage), "rgb8")
-	except CvBridgeError as e:
-	    print(e)
+    	if self.imageType == 'Rotated':
+    		self.imageMessage = self.rotateImage
+    	elif self.imageType == 'Cropped':
+    		self.imageMessage = self.croppedImage
+    	else:
+    		self.imageMessage = self.image
+
+    	try:
+    	    image_msg = self.bridge.cv2_to_imgmsg(np.array(self.imageMessage), "rgb8")
+    	except CvBridgeError as e:
+    	    print(e)
 
         file = 'characteristics_target_{}.txt'.format(self.targetDir[-1])
         writeFile = open(file, 'wb')
-        heading = self.vals[2] - self.rotateValue.get()
-        if(heading < 0):
-            heading += 360
+        orientation = self.vals[2] - self.rotateValue.get()
+        if(orientation < 0):
+            orientation += 360
 
-	#add target type
-	self.msg.image = image_msg
-	self.msg.gps_lati = float(self.vals[0])
-	self.msg.gps_longit = float(self.vals[1])
-	self.msg.target_color = self.tColorContent.get()
-	self.msg.target_shape = self.tShapeContent.get()
-	self.msg.symbol = self.letterContent.get()
-	self.msg.symbol_color = self.lColorContent.get()
-	self.msg.orientation = str(heading)
-
-	self.pub.publish(self.msg)
-	'''
-        writeFile.write('{}\n,{}\n,{}\n,{}\n,{}\n,{}\n,{}\n,{}'.format(self.targetDir[-1], self.vals[0], self.vals[1],
-                                                            heading, self.tShapeContent.get(), self.letterContent.get(),
-                                                            self.tColorContent.get(), self.lColorContent.get()))
-	'''
-        self.tColorContent.set("")
-        self.tShapeContent.set("")
-        self.lColorContent.set("")
+    	#add target type self.typeContent.get()
+    	self.msg.image = image_msg
+    	self.msg.gps_lati = float(self.vals[0])
+    	self.msg.gps_longit = float(self.vals[1])
+    	self.msg.target_color = self.tColorContent.get()
+    	self.msg.target_shape = self.tShapeContent.get()
+    	self.msg.symbol = self.letterContent.get()
+    	self.msg.symbol_color = self.lColorContent.get()
+    	self.msg.orientation = str(orientation)
+    	self.pub.publish(self.msg)
+    	'''
+        writeFile.write('{}\n,{}\n,{}\n,{}\n,{}\n,{}\n,{}\n,{}'.format(self.typeContent.get(), self.vals[0], self.vals[1],
+                                                                orientation, self.tShapeContent.get(), self.letterContent.get(),
+                                                                self.tColorContent.get(), self.lColorContent.get()))
+    	'''
         self.letterContent.set("")
-
-    def restartDiscard(self):
-        self.job = self.after(self.delay, self.autoDiscard)
-
-    def pauseDiscard(self):
-        try:
-            self.after_cancel(self.rotateJob)
-        except AttributeError:
-            pass
-        self.after_cancel(self.job)
-
 
     def sampleRotate(self):
         width, height = self.image.size
@@ -163,7 +76,6 @@ class Application(Frame):
             # display the image in the GUI across 5 columns
             #self.panel.grid(row=0, column=1, columnspan=5)
         self.rotateJob = self.after(1000, self.sampleRotate)
-
 
     def on_button_press(self, event):
         if self.rect:
@@ -187,8 +99,6 @@ class Application(Frame):
         if self.rect:
             self.canvas.delete(self.rect)
             self.rect=None
-    #def drawRectangle(self):
-
 
     def cropImage(self):
         if not self.rect:
@@ -219,7 +129,7 @@ class Application(Frame):
                                     int((self.curX-offsetX)*self.w_mult), int((self.curY-offsetY)*self.h_mult)))
             else:
                 self.croppedImage = self.toBeCropped.crop((self.start_x-offsetX, self.start_y-offsetY,self.curX-offsetX, self.curY-offsetY))
-            self.croppedImage = self.croppedImage.resize((370,370))
+            self.croppedImage = self.croppedImage.resize((450,450))
             #print('{0} {1} {2} {3}'.format(self.start_x, self.start_y, self.curX, self.curY))
             self.image_tk = ImageTk.PhotoImage(self.croppedImage)
             # create the label with the embedded image
@@ -254,95 +164,74 @@ class Application(Frame):
         self.refValue = 0
         self.rotateLabel = Label(self, text="Counter Clockwise >>")
         self.rotateLabel.grid(row=2, column=4, columnspan=2)
-        self.rotateScale = Scale(self, from_=0, to=360, orient=HORIZONTAL, width=10, length=150, sliderlength=15, variable=self.rotateValue, state=DISABLED)
+        self.rotateScale = Scale(self, from_=0, to=360, orient=HORIZONTAL, width=10, length=150, 
+                            sliderlength=15, variable=self.rotateValue, state=DISABLED)
         self.rotateScale.grid(row=3, column=4, columnspan=2)
-
-        #self.rotateImage = self.rotateImage.resize(10,10)
-        #self.rotateButton = Button(self, text="START ROTATING", width=15, height=1, command=self.sampleRotate, state=DISABLED)
-        #self.rotateButton.grid(row=4, column=4, columnspan=2)
-
-        #self.start = Button(self, width=9, height=1, text="START", command=self.restartDiscard)
-        #self.start.grid(row=1, column=4, sticky=E)
-        #self.pause = Button(self, width=8, height=1, text="PAUSE", command=self.pauseDiscard)
-        #self.pause.grid(row=1, column=5, sticky=W)
-        #self.after_cancel(self.job)
-        # create the button that allows us to discard the image, attaches the save image function with discard always True
-        #self.discard= Button(self, width=20, height=1, text="DISCARD", command=partial(self.saveImage,True))
-        # display the button on the GUI
-        #self.discard.grid(row=1, column=1)
-
-        # create the button that allows us to save the image to a target directory, attaches the save image function with discard always False
-        #self.save = Button(self, width=20, height=1, text="SAVE", command=self.saveImage)
-        # display the button on the GUI
-        #self.save.grid(row=1, column=2)
 
         # create the button that allows us to quit the program
         self.quit = Button(self, width=10, height=1, text="QUIT", fg="red", command=self.quit)
         # display the button on the GUI
-        self.quit.grid(row=4, column=6)
+        self.quit.grid(row=6, column=6)
 
-        self.tColorLabel = Label(self, text="Target Color")
+        self.tColorLabel = Label(self, text="Background Color")
         self.tColorLabel.grid(row=1,column=1)
 
         self.tColorContent = StringVar()
-        self.targetColor = Entry(self, width=20, textvariable=self.tColorContent, state=DISABLED)
+        self.tColorContent.set("white")
+        self.targetColor = OptionMenu(self, self.tColorContent, "white", "black", "gray", "red", "blue",
+                            "green", "yellow", "purple", "brown", "orange")
         self.targetColor.grid(row=2,column=1)
 
-        self.tShapeLabel = Label(self, text="Target Shape")
+        self.tShapeLabel = Label(self, text="Shape")
         self.tShapeLabel.grid(row=3,column=1)
 
         self.tShapeContent = StringVar()
-        self.targetShape = Entry(self, width=20, textvariable=self.tShapeContent, state=DISABLED)
+        self.tShapeContent.set("circle")
+        self.targetShape = OptionMenu(self, self.tShapeContent, "circle", "semicircle", "quarter_circle", "triangle", "square", "rectangle", "trapezoid", 
+                            "pentagon", "hexagon", "heptagon", "octagon", "star", "cross" )
         self.targetShape.grid(row=4,column=1)
 
-        self.lColorLabel = Label(self, text="Letter Color")
-        self.lColorLabel.grid(row=1,column=2)
+        self.alphaColorLabel = Label(self, text="Alphanumeric Color")
+        self.alphaColorLabel.grid(row=1,column=2)
 
         self.lColorContent = StringVar()
-        self.letterColor = Entry(self, width=20, textvariable=self.lColorContent, state=DISABLED)
-        self.letterColor.grid(row=2,column=2)
+        self.lColorContent.set("gray")
+        self.alphaColor = OptionMenu(self, self.lColorContent, "white", "black", "gray", "red", "blue", "green", "yellow",
+                            "purple", "brown", "orange")
+        self.alphaColor.grid(row=2,column=2)
 
-        self.letterLabel = Label(self, text="Letter")
+        self.letterLabel = Label(self, text="Alphanumeric")
         self.letterLabel.grid(row=3,column=2)
 
         self.letterContent = StringVar()
         self.letter = Entry(self, width=20, textvariable=self.letterContent, state=DISABLED)
         self.letter.grid(row=4,column=2)
 
+        self.typeLabel = Label(self, text="Target Type")
+        self.typeLabel.grid(row=3, column=3)
+
+        self.typeContent = StringVar()
+        self.typeContent.set("standard")
+        self.typeMenu = OptionMenu(self, self.typeContent, "standard", "emergent")
+        self.typeMenu.grid(row=4,column=3)
+
         # create a label to explain the functionality of the radio buttons
         self.targetLabel = Label(self, text="Select Target Directory")
         # display the label on the GUI
         self.targetLabel.grid(row=1,column=3)
 
-        #self.targetContent = StringVar()
-        #self.target = Entry(self, width=20, textvariable=self.targetContent)
-        #self.target.grid(row=2,column=3)
-
         self.targetButton = Button(self, width=18, height=1, text="BROWSE", command=self.browseDirectory)
         self.targetButton.grid(row=2, column=3)
-        """
-        # create a integer object to pass to the radio button
-        self.v = IntVar()
-        # initialize its value to 1
-        self.v.set(1)
-        # create the list that tracks how many images have been saved in each target directory
-        self.index = []
-        # create a radio button for each of the targets
+    
+        Label(self, text=" ").grid(row=5, column=1)
+        self.descriptionLabel = Label(self, text="Emergent Description:")
+        self.descriptionLabel.grid(row=6, column=1)
 
-        for i in range(1,self.targets+1):
-            # add an entry in the image number list
-            self.index.append(0)
-            # create the radio button and add the initialize target as the function, attach the integer object to track which button is selected
-            Radiobutton(self, text="Target " + str(i), variable=self.v, value=i, command=self.initTarget).grid(row=i+1, column=3)
-            # create the target directory name associated with the button
-            self.targetdir = os.path.join(self.outputdir, 'target' + str(i))
-            # if the directory doesn't already exist
-            if not os.path.isdir(self.targetdir):
-                # create the directory
-                os.makedirs(self.targetdir)
-        # set the target directory to be one as a default when the GUI starts
-        self.targetdir = self.targetdir[:-1] + '1'
-        """
+        self.descriptionContent = StringVar()
+        self.descriptionField = Entry(self, textvariable=self.descriptionContent, state=DISABLED)
+        self.descriptionField.grid(row=6, column=2)
+       
+
     def loadImage(self, event):
         if self.red_rect:
             self.canvas.delete(self.red_rect)
@@ -365,10 +254,9 @@ class Application(Frame):
         self.cropButton.configure(state=NORMAL)
         self.undo.configure(state=NORMAL)
         self.rotateScale.configure(state=NORMAL)
-        self.targetShape.configure(state=NORMAL)
-        self.targetColor.configure(state=NORMAL)
         self.letter.configure(state=NORMAL)
-        self.letterColor.configure(state=NORMAL)
+        self.descriptionField.configure(state=NORMAL)
+
         self.canvas.bind("<ButtonPress-1>",self.on_button_press)
         self.canvas.bind("<ButtonPress-3>", self.right_click)
         self.canvas.bind("<B1-Motion>", self.on_move_press)
@@ -376,15 +264,16 @@ class Application(Frame):
         self.image = Im.open(filename)
         self.originalImage = self.image
         width, height = self.image.size
-        self.w_mult = float(width) / 370
-        self.h_mult = float(height) / 370
+        self.w_mult = float(width) / 450
+        self.h_mult = float(height) / 450
         # resizes the image so that all are the same size
-        self.image = self.image.resize((370, 370), Im.ANTIALIAS)
+        self.image = self.image.resize((450, 450), Im.ANTIALIAS)
         # converts the PIL image to a tk image
         self.image_tk = ImageTk.PhotoImage(self.image)
         # create the label with the embedded image
         self.canvas.create_image(self.master.winfo_screenwidth()/2,(self.master.winfo_screenheight()-200)/2,anchor=CENTER, image=self.image_tk)
         self.imageType = 'Standard'
+        self.averagePositionVals()
 
     def browseDirectory(self):
         self.targetDir = tkFileDialog.askdirectory()
@@ -393,26 +282,28 @@ class Application(Frame):
     def averagePositionVals(self):
         self.vals = [0,0]
         values = open('{}/target_{}_locations.txt'.format(self.paramDir, self.targetDir[-1]), 'rb')
-	count = 0
+        count = 0
+        image_no = self.red_pos[0] * self.columns + self.red_pos[1]
+        m=0
         for line in values:
-	    if(line!='\n'):
-		split_vals = line.split(',')
-		self.vals[0] += float(split_vals[2])
-		self.vals[1] += float(split_vals[3])
-		count += 1
-	    else:
-		break
+            if(line!='\n'):
+                split_vals = line.split(',')
+                self.vals[0] += float(split_vals[2])
+                self.vals[1] += float(split_vals[3])
+                count += 1
+                if(m==image_no):
+                    orientation = float(split_vals[4])
+                m+=1
+    	    else:
+    		  break
 
         self.vals = list(map(lambda x: x / count, self.vals))
-	self.vals.append(200)
+        self.vals.append(orientation)
 
 
     def loadFiles(self, event=None):
         if self.image:
             self.image_tk=None
-
-	#print(self.targetDir)
-        # sample the directory for images
         try:
             files = os.listdir(self.targetDir)
         except OSError:
@@ -420,10 +311,8 @@ class Application(Frame):
         self.cropButton.configure(state=DISABLED)
         self.undo.configure(state=DISABLED)
         self.rotateScale.configure(state=DISABLED)
-        self.targetShape.configure(state=DISABLED)
-        self.targetColor.configure(state=DISABLED)
         self.letter.configure(state=DISABLED)
-        self.letterColor.configure(state=DISABLED)
+        self.descriptionField.configure(state=DISABLED)
 
         self.canvas.bind("<Button-1>", self.move_red_rect)
         self.canvas.bind("<Double-Button-1>", self.loadImage)
@@ -435,14 +324,11 @@ class Application(Frame):
 
         self.images = [x for x in files if '.jpg' in x]
         self.savedImages = []
-	self.paramDir = os.path.join(os.path.dirname(os.path.dirname(self.targetDir)),'target_locations')
-	try:
+    	self.paramDir = os.path.join(os.path.dirname(os.path.dirname(self.targetDir)),'target_locations')
+    	try:
             locations_files = os.listdir(self.paramDir)
         except OSError:
             return
-	#print(locations_files)
-        self.averagePositionVals()
-        # divide the images into equal sizes
         self.columns = ceil(sqrt(len(self.images)))
         self.rows = ceil(len(self.images) / self.columns)
         width=self.master.winfo_screenwidth()
@@ -452,7 +338,6 @@ class Application(Frame):
         self.column_size = int(width/self.columns)
         self.row_size = int(height/self.rows)
         for i in range(len(self.images)):
-	    print(self.images[i])
             image = Im.open('{}/{}'.format(self.targetDir,self.images[i]))
             image = image.resize((self.column_size, self.row_size))
             # converts the PIL image to a tk image
@@ -465,6 +350,7 @@ class Application(Frame):
                 k+=1
         self.red_rect = self.canvas.create_rectangle(0, 0, self.column_size, self.row_size, fill='',outline='red')
         self.red_pos = (0,0)
+
 
     def move_up(self, event):
         if not self.red_rect:
@@ -540,8 +426,6 @@ class Application(Frame):
     # initialize the application
     def __init__(self, master=None):
         self.master = master
-        #self.images = os.listdir('images/')
-        #input image counter
         self.i = 0
         # auto discard delay time in milliseconds
         self.delay = 2000
@@ -552,54 +436,26 @@ class Application(Frame):
         self.croppedImage = None
         self.imageType = ''
 
-	self.pub = rospy.Publisher('plans', interopImages, queue_size =  10)
-	self.bridge = CvBridge()
-	self.msg = interopImages()
+    	self.pub = rospy.Publisher('plans', interopImages, queue_size =  10)
+    	self.bridge = CvBridge()
+    	self.msg = interopImages()
 
-	rospy.init_node('death_star', anonymous=True)
-	#rate = rospy.Rate(1)
+    	rospy.init_node('death_star', anonymous=True)
 
         # create the frame
         Frame.__init__(self, master)
         # pack it up
         self.pack()
 
-        # check to see if the output directory exists and create it if it doesn't
-        '''
-        self.outputdir = os.path.join(os.path.dirname(
-            os.path.realpath(__file__)), 'output')
-        if not os.path.isdir(self.outputdir):
-            os.makedirs(self.outputdir)
-        # check to see if the discard directory exists and create it if it doesn't
-        self.discarddir = os.path.join(self.outputdir, 'discarded')
-        if not os.path.isdir(self.discarddir):
-            os.makedirs(self.discarddir)
-        # check to see if the image directory exists and create it if it doesn't
-        self.imagedir = os.path.join(os.path.dirname(
-            os.path.realpath(__file__)), 'images')
-        if not os.path.isdir(self.imagedir):
-            os.makedirs(self.imagedir)
-            '''
         self.x = self.y = 0
         self.canvas = Canvas(self, height=self.master.winfo_screenheight()-200, width=self.master.winfo_screenwidth(), cursor="cross")
         self.canvas.grid(row=0, column=1, columnspan=6)
         self.rect=None
-        # start the auto discard function
-        #self.job = self.after(self.delay, self.autoDiscard)
-        # create the wait for next image error
-        # self.error = Label(self, text='WAIT FOR NEXT IMAGE')
-        # load the first image
-        #self.loadNextImage()
+
         # add all the buttons
         self.createWidgets()
         self.master.grab_set()
         self.master.grab_release()
-        #tkMessageBox.showinfo(
-         #   "Instructions",
-          #  "Open target directory to load images and ROS data")
-        #tkMessageBox.showinfo(
-         #   "Instructions",
-          #  "1. Click an image to highlight\n2. Double click an image to select\n3. Middle click to undo")
 
 # create the application and run it
 root = Tk()
