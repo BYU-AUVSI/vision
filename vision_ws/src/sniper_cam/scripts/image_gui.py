@@ -23,40 +23,45 @@ from cv_bridge import CvBridge, CvBridgeError
 class Application(Frame):
     
     def submitInfo(self):
-    	if self.imageType == 'Rotated':
-    		self.imageMessage = self.rotateImage
-    	elif self.imageType == 'Cropped':
-    		self.imageMessage = self.croppedImage
-    	else:
-    		self.imageMessage = self.image
-
-    	try:
-    	    image_msg = self.bridge.cv2_to_imgmsg(np.array(self.imageMessage), "rgb8")
-    	except CvBridgeError as e:
-    	    print(e)
-
+        if self.imageType == 'Rotated':
+            self.imageMessage = self.rotateImage
+        elif self.imageType == 'Cropped':
+            self.imageMessage = self.croppedImage
+        else:
+            self.imageMessage = self.image
+        
+        try:
+            image_msg = self.bridge.cv2_to_imgmsg(np.array(self.imageMessage), "rgb8")
+        except CvBridgeError as e:
+            print(e)
+      
         file = 'characteristics_target_{}.txt'.format(self.targetDir[-1])
         writeFile = open(file, 'wb')
         orientation = self.vals[2] - self.rotateValue.get()
         if(orientation < 0):
             orientation += 360
-
-    	#add target type self.typeContent.get()
-    	self.msg.image = image_msg
-    	self.msg.gps_lati = float(self.vals[0])
-    	self.msg.gps_longit = float(self.vals[1])
-    	self.msg.target_color = self.tColorContent.get()
-    	self.msg.target_shape = self.tShapeContent.get()
-    	self.msg.symbol = self.letterContent.get()
-    	self.msg.symbol_color = self.lColorContent.get()
-    	self.msg.orientation = str(orientation)
-    	self.pub.publish(self.msg)
-    	'''
+        
+        #add target type self.typeContent.get()
+        self.msg.image = image_msg
+        self.msg.gps_lati = float(self.vals[0])
+        self.msg.gps_longit = float(self.vals[1])
+        self.msg.target_color = self.tColorContent.get()
+        self.msg.target_shape = self.tShapeContent.get()
+        self.msg.symbol = self.letterContent.get()
+        self.msg.symbol_color = self.lColorContent.get()
+        self.msg.orientation = str(orientation)
+        self.pub.publish(self.msg)
+        
+        '''
         writeFile.write('{}\n,{}\n,{}\n,{}\n,{}\n,{}\n,{}\n,{}'.format(self.typeContent.get(), self.vals[0], self.vals[1],
                                                                 orientation, self.tShapeContent.get(), self.letterContent.get(),
                                                                 self.tColorContent.get(), self.lColorContent.get()))
-    	'''
+        '''
         self.letterContent.set("")
+        self.rotateValue.set(0)
+        self.master.after_cancel(self.rotateJob)
+        self.rotateJob=None
+        self.image_tk=None
 
     def sampleRotate(self):
         width, height = self.image.size
@@ -247,7 +252,7 @@ class Application(Frame):
         self.master.unbind("<Left>")
         self.master.unbind("<Right>")
 
-        self.sampleRotate()
+        self.rotateJob = self.after(1000, self.sampleRotate)
         self.savedImages=[]
         self.canvas.delete(self.red_rect)
         self.submit.configure(state=NORMAL)
@@ -261,7 +266,7 @@ class Application(Frame):
         self.canvas.bind("<ButtonPress-3>", self.right_click)
         self.canvas.bind("<B1-Motion>", self.on_move_press)
         self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
-        self.image = Im.open(filename)
+        self.image = Im.open(filename)            
         self.originalImage = self.image
         width, height = self.image.size
         self.w_mult = float(width) / 450
@@ -294,16 +299,22 @@ class Application(Frame):
                 if(m==image_no):
                     orientation = float(split_vals[4])
                 m+=1
-    	    else:
-    		  break
+            else:
+              break
 
         self.vals = list(map(lambda x: x / count, self.vals))
         self.vals.append(orientation)
 
 
     def loadFiles(self, event=None):
+        if self.rotateJob:
+            self.master.after_cancel(self.rotateJob)
+            self.rotateJob=None
+        self.rotateValue.set(0)
+
         if self.image:
             self.image_tk=None
+            self.image=None
         try:
             files = os.listdir(self.targetDir)
         except OSError:
@@ -324,8 +335,8 @@ class Application(Frame):
 
         self.images = [x for x in files if '.jpg' in x]
         self.savedImages = []
-    	self.paramDir = os.path.join(os.path.dirname(os.path.dirname(self.targetDir)),'target_locations')
-    	try:
+        self.paramDir = os.path.join(os.path.dirname(os.path.dirname(self.targetDir)),'target_locations')
+        try:
             locations_files = os.listdir(self.paramDir)
         except OSError:
             return
@@ -434,14 +445,15 @@ class Application(Frame):
         self.displayImage = None
         self.rotateImage = None
         self.croppedImage = None
+        self.rotateJob = None
         self.imageType = ''
+        
+        self.pub = rospy.Publisher('plans', interopImages, queue_size =  10)
+        self.bridge = CvBridge()
+        self.msg = interopImages()
 
-    	self.pub = rospy.Publisher('plans', interopImages, queue_size =  10)
-    	self.bridge = CvBridge()
-    	self.msg = interopImages()
-
-    	rospy.init_node('death_star', anonymous=True)
-
+        rospy.init_node('death_star', anonymous=True)
+        
         # create the frame
         Frame.__init__(self, master)
         # pack it up
