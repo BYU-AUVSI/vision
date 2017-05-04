@@ -13,28 +13,25 @@ class Sniper_cam
 
 {
 
-protected:
-
-
-
-    // private parameters
-    struct params_s {
-
-        int camera_number;
-        int frame_rate;
-
-
-    };
-
-
-
 public:
 
-    Sniper_cam();
-    ~Sniper_cam();
+  Sniper_cam();
+  ~Sniper_cam();
 
-    // public function to call in main loop. This function will do most of the work
-    void publish_image();
+  // public function to call in main loop. This function will do most of the work
+  void publish_image();
+
+protected:
+
+  // private parameters
+  struct params_s {
+
+      int camera_number;
+      int frame_rate;
+      bool record_video;
+
+
+  };
 
 private:
 
@@ -46,11 +43,10 @@ private:
 
     // private image transport publsiher to advertise
     image_transport::Publisher pub;
-
+    cv::VideoWriter output_cap;
     // private variables
     cv::Mat frame;
     sensor_msgs::ImagePtr msg;
-
     struct params_s params;
     uint16_t counter;
 
@@ -58,14 +54,5 @@ private:
 
 };
 }
-
-
-
-
-
-
-
-
-
 
 #endif //SNIPER_CAM_PUBLISHER_H

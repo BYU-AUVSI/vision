@@ -35,12 +35,14 @@ Sniper_cam::Sniper_cam():
 
     counter = 0;
 
+    output_cap;
+
     // parameters
-    nh.param<int>("CAMERA_NUMBER", params.camera_number, 0);
-    nh.param<int>("FRAME_RATE", params.frame_rate, 30);
+    nh.param<int>("camera_number", params.camera_number, 0);
+    nh.param<int>("frame_rate", params.frame_rate, 30);
+    nh.param<bool>("record_video", params.record_video, false);
 
 }
-
 // destructor function. Nesessary for all c++ classes
 Sniper_cam::~Sniper_cam()
 {
@@ -58,8 +60,16 @@ void Sniper_cam::publish_image(){
     // using this node for the sniper camera we can assume the sniper camera will be
     // camera 0.
     cv::VideoCapture cap(params.camera_number);
+    ROS_INFO_STREAM("RECORD_VIDEO: " << params.record_video);
+    ROS_INFO_STREAM("FRAME_RATE: " << params.frame_rate);
+    ROS_INFO_STREAM("CAMERA_NUMBER: " << params.camera_number);
+    if(params.record_video){
+        output_cap.open("output.avi", CV_FOURCC('M', 'J', 'P', 'G'),
+                                    params.frame_rate,
+                                    cv::Size(1024, 576), true);
+    }
 
-    // check if the camera has been accessed
+    // check if the camera has been accesse
     if(!cap.isOpened()) return;
 
     // set the loop rate to 15. The input to this should also be a ros parameter
@@ -77,6 +87,16 @@ void Sniper_cam::publish_image(){
 
             //resize the image from 1080p 576p (~half size)
             cv::resize(frame,frame,cv::Size(1024,576)); //16:9 aspect ratio
+
+            if(params.record_video){
+                if(!output_cap.isOpened()){
+                    ROS_DEBUG_STREAM("output video could not be opened!");
+
+                }else {
+                    ROS_DEBUG_STREAM("writing to frame");
+                    output_cap.write(frame);                }
+
+            }
 
             // convert msg to a ros msg
             msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
@@ -109,6 +129,7 @@ int main(int argc, char** argv)
 
 
     ROS_INFO_STREAM("Sniper cam publisher");
+    ROS_INFO_STREAM("Got here");
     ros::init(argc, argv, "sniper_cam_publisher");
     sniper_cam::Sniper_cam sc;
     sc.publish_image();

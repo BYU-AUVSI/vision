@@ -1,0 +1,12 @@
+<launch>
+
+  <node name="sniper" pkg="sniper_cam" type="sniper_cam"
+    respawn="true">
+    <param name="camera_number" value="0" />
+    <param name="frame_rate" value="10" />
+    <param name="record_video" value="1" />
+  </node>
+
+
+
+</launch>

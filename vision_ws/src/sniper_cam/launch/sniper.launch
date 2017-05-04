@@ -9,9 +9,12 @@
 
    <node name="sniper" pkg="sniper_cam" type="sniper_cam"
      respawn="true">
+     <param name="CAMERA_NUMBER" value="0" />
+     <param name="FRAME_RATE" value="10" />
+     <param name="RECORD_VIDEO" value="true" />
    </node>
 
-  <node pkg="tf" type="static_transform_publisher" name="test_broadcaster"
+   <node pkg="tf" type="static_transform_publisher" name="test_broadcaster"
     args="100 40 -100 0 0 0 1 base MAV 100" />
 
   <node name ="spotter_stamper" pkg="image_stamper" type="image_stamper.py"
