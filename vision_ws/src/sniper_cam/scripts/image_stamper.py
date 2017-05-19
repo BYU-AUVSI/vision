@@ -8,8 +8,8 @@
 
 import rospy
 from sensor_msgs.msg import CompressedImage
-from sniper_cam.msg import state_image
-from cv_bridge import CvBridge, CvBridgeError
+from fcu_common.msg import State
+from sniper_cam.msg import stateImage
 import cv2
 import math
 import numpy as np
@@ -19,6 +19,11 @@ class ImageStamper(object):
 
     def __init__(self):
         self.image_subscriber = rospy.Subscriber('image_raw/compressed', CompressedImage, self.image_callback, queue_size=1)
+        self.state_subscriber = rospy.Subscriber('/state', State, self.state_callback, queue_size=1)
+        self.state_image_publisher = rospy.Publisher('state_image', stateImage, queue_size=10)
+
+        #create stateImage object
+        self.state_image_msg = stateImage()
 
         # initialize state variables
         self.pn = 0.0
@@ -32,53 +37,45 @@ class ImageStamper(object):
         self.alpha_az = 0.0
         self.alpha_el = 0.0
 
-        # initialize image parameters
-        self.img_width = 0.0
-        self.img_height = 0.0
-        self.fov_w = 60.0
-        self.fov_h = 45.0
-
-        # initialize current image
-        shape = 964, 1288, 3
-        self.img_current = np.zeros(shape, np.uint8)
-
+        # initialize counter
+        self.counter = 0
 
 
     def image_callback(self, msg):
-        # pull off the state info from the message
-        self.pn = 0.0
-        self.pe = 0.0
-        self.pd = -100.0
+        # increment the counter
+        self.counter += 1
 
-        self.phi = math.radians(22.5)   #22.5
-        self.theta = math.radians(0.0)
-        self.psi = math.radians(0.0)
+        # publish every 15th frame (assuming camera is set to 15 fps)
+        if self.counter == 15:
+            #reset counter
+            self.counter = 0
 
-        self.alpha_az = math.radians(90.0)    #90
-        self.alpha_el = math.radians(-22.5) #-22.5
+            #fill out the stateImage message
+            self.state_image_msg.pn = self.pn
+            self.state_image_msg.pe = self.pe
+            self.state_image_msg.pd = self.pd
+            self.state_image_msg.phi = self.phi
+            self.state_image_msg.theta = self.theta
+            self.state_image_msg.chi = self.chi
+            self.state_image_msg.azimuth = self.alpha_az
+            self.state_image_msg.elevation = self.alpha_el
+            self.state_image_msg.image = msg
 
-        # direct conversion to CV2 of the image portion of the message
-        np_arr = np.fromstring(msg.data, np.uint8)
-        img_np = cv2.imdecode(np_arr, 1)
-        self.img_current = cv2.imdecode(np_arr, 1)
-        # make a copy of img_np for saving and accessing elsewhere in the class
-        #self.img_current = img_np
+            #publish the message
+            self.state_image_publisher.publish(self.state_image_msg)
 
-        # get the width and height of the image
-        height, width, channels = img_np.shape
-        self.img_width = width
-        self.img_height = height
+        else:
+            pass
 
-        # get the time
-        self.get_current_time()
 
-        # display the image
-        cv2.rectangle(img_np,(0,0),(200,45),(0,0,0),-1)
-        cv2.putText(img_np,"Status: " + self.status,(5,20),cv2.FONT_HERSHEY_PLAIN,1,(0,255,0))
-        cv2.putText(img_np,self.time_str,(5,40),cv2.FONT_HERSHEY_PLAIN,1,(0,255,0))
-        cv2.imshow('sniper cam image', img_np)
-        # wait about a second
-        cv2.waitKey(999)
+    def state_callback(self, data):
+        self.pn = data.position[0]
+        self.pe = data.position[1]
+        self.pd = data.position[2]
+
+        self.phi = data.phi
+        self.theta = data.theta
+        self.chi = data.chi
 
 
 
@@ -95,6 +92,7 @@ def main():
         print("Shutting down")
     #OpenCV cleanup
     cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     main()
